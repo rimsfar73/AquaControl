@@ -1,4 +1,5 @@
 🟦 📄 RESUMEN EJECUTIVO
+
 AquaControl es una aplicación móvil desarrollada en Android Studio utilizando Jetpack Compose, MVVM, StateFlow, Navigation Compose y Repository Pattern. El sistema implementa un flujo jerárquico basado en el caso real de producción avícola, permitiendo visualizar:
 •	Granjas disponibles
 •	Galpones asociados
@@ -14,6 +15,7 @@ El proyecto cumple con los requisitos de la Evaluación Aplicada 2 (EA2), demost
 •	Documentación técnica completa
 •	Diagramas UML del flujo y estructura
 AquaControl queda preparado como base para una futura integración con sensores reales, API REST y almacenamiento local mediante Room.
+
 🟦 🎯 OBJETIVO GENERAL
 Desarrollar una aplicación móvil funcional que permita visualizar y monitorear la temperatura de las líneas de bebederos en galpones avícolas, utilizando arquitectura MVVM, Jetpack Compose y Navigation, simulando el flujo operativo del caso real presentado en la EA2.
 
