@@ -1,6 +1,6 @@
 package com.example.aquacontrol.model.linea
 
-enum class EstadoLinea { NORMAL, ADVERTENCIA, CRITICO }
+import com.example.aquacontrol.model.estado.EstadoLinea
 
 data class LineaBebedero(
     val id: Int,
