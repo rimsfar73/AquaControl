@@ -30,103 +30,77 @@ El sistema simula el flujo operativo del **Caso Galpones**, permitiendo navegar 
 ## 📁 Estructura del proyecto (MVVM + Roles)
 
 app/src/main/java/com/example/aquacontrol/
-
+│
 ├── MainActivity.kt
-
-├── iu/
-
+│
+├── iu/                          ← Capa UI (todas las pantallas)
 │   ├── roles/
-
 │   │   └── RolSelectionScreen.kt
-
+│   │
 │   ├── operario/
-
 │   │   └── OperarioScreen.kt
-
+│   │
 │   ├── supervisor/
-
 │   │   └── SupervisorScreen.kt
-
+│   │
 │   ├── granjas/
-
 │   │   └── GranjaScreen.kt
-
+│   │
 │   ├── galpones/
-
 │   │   └── GalponScreen.kt
-
+│   │
 │   ├── lineas/
-
 │   │   └── LineaScreen.kt
-
+│   │
 │   ├── detalle/
-
 │   │   └── DetalleLineaScreen.kt
-
+│   │
 │   ├── components/
-
 │   │   └── ReusableButton.kt
-
+│   │
 │   └── navigation/
-
 │       ├── AppNavHost.kt
-
 │       └── Routes.kt
-
-├── viewmodel/
-
+│
+├── viewmodel/                   ← Capa ViewModel (lógica + estado)
 │   ├── perfil/
-
 │   │   └── PerfilViewModel.kt
-
+│   │
 │   ├── granjas/
-
 │   │   └── GranjaViewModel.kt
-
+│   │
 │   ├── galpones/
-
 │   │   └── GalponViewModel.kt
-
+│   │
 │   ├── lineas/
-
 │   │   └── LineaViewModel.kt
-
+│   │
 │   └── detalle/
-
 │       └── DetalleLineaViewModel.kt
-
-├── model/
-
+│
+├── model/                      ← Capa Model (datos del dominio)
 │   ├── perfil/
-
 │   │   └── PerfilUsuario.kt
-
+│   │
 │   ├── granja/
-
 │   │   └── Granja.kt
-
+│   │
 │   ├── galpon/
-
 │   │   └── Galpon.kt
-
+│   │
 │   ├── linea/
-
 │   │   └── LineaBebedero.kt
-
+│   │
 │   ├── estado/
-
 │   │   └── EstadoLinea.kt
-
+│   │
 │   └── historial/
-
 │       └── HistorialTemperatura.kt
+│
+└── repository/                 ← Capa Repository (origen de datos)
+    └── bebedero/
+        └── BebederoRepository.kt
 
-
-└── repository/
-
-└── bebedero/
-
-└── BebederoRepository.kt
 
 
 
