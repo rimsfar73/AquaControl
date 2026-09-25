@@ -1,3 +1,7 @@
 package com.example.aquacontrol.model.estado
 
-data class EstadoLinea()
+enum class EstadoLinea {
+    NORMAL,
+    ADVERTENCIA,
+    CRITICO
+}

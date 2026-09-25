@@ -1,7 +1,7 @@
 package com.example.aquacontrol.repository.bebedero
 
 import com.example.aquacontrol.model.linea.LineaBebedero
-import com.example.aquacontrol.model.linea.EstadoLinea
+import com.example.aquacontrol.model.estado.EstadoLinea
 
 class BebederoRepository {
 
