@@ -29,11 +29,12 @@ El sistema simula el flujo operativo del **Caso Galpones**, permitiendo navegar 
 
 ## 📁 Estructura del proyecto (MVVM + Roles)
 
+```text
 app/src/main/java/com/example/aquacontrol/
 │
 ├── MainActivity.kt
 │
-├── iu/                          ← Capa UI (todas las pantallas)
+├── ui/                         ← Capa UI (todas las pantallas)
 │   ├── roles/
 │   │   └── RolSelectionScreen.kt
 │   │
@@ -62,7 +63,7 @@ app/src/main/java/com/example/aquacontrol/
 │       ├── AppNavHost.kt
 │       └── Routes.kt
 │
-├── viewmodel/                   ← Capa ViewModel (lógica + estado)
+├── viewmodel/                  ← Capa ViewModel (lógica + estado)
 │   ├── perfil/
 │   │   └── PerfilViewModel.kt
 │   │
@@ -80,7 +81,7 @@ app/src/main/java/com/example/aquacontrol/
 │
 ├── model/                      ← Capa Model (datos del dominio)
 │   ├── perfil/
-│   │   └── PerfilUsuario.kt
+│   │   └── Perfil.kt
 │   │
 │   ├── granja/
 │   │   └── Granja.kt
@@ -89,18 +90,16 @@ app/src/main/java/com/example/aquacontrol/
 │   │   └── Galpon.kt
 │   │
 │   ├── linea/
-│   │   └── LineaBebedero.kt
-│   │
-│   ├── estado/
+│   │   ├── LineaBebedero.kt
 │   │   └── EstadoLinea.kt
 │   │
-│   └── historial/
+│   └── temperatura/
 │       └── HistorialTemperatura.kt
 │
 └── repository/                 ← Capa Repository (origen de datos)
     └── bebedero/
         └── BebederoRepository.kt
-
+```
 
 
 
