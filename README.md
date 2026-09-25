@@ -38,73 +38,97 @@ app/src/main/java/com/example/aquacontrol/
 │   ├── roles/
 
 │   │   └── RolSelectionScreen.kt
+
 │   ├── operario/
 
 │   │   └── OperarioScreen.kt
 
 │   ├── supervisor/
+
 │   │   └── SupervisorScreen.kt
 
 │   ├── granjas/
+
 │   │   └── GranjaScreen.kt
 
 │   ├── galpones/
+
 │   │   └── GalponScreen.kt
 
 │   ├── lineas/
+
 │   │   └── LineaScreen.kt
 
 │   ├── detalle/
+
 │   │   └── DetalleLineaScreen.kt
 
 │   ├── components/
+
 │   │   └── ReusableButton.kt
 
 │   └── navigation/
+
 │       ├── AppNavHost.kt
+
 │       └── Routes.kt
 
 ├── viewmodel/
+
 │   ├── perfil/
+
 │   │   └── PerfilViewModel.kt
 
 │   ├── granjas/
+
 │   │   └── GranjaViewModel.kt
 
 │   ├── galpones/
+
 │   │   └── GalponViewModel.kt
 
 │   ├── lineas/
+
 │   │   └── LineaViewModel.kt
 
 │   └── detalle/
+
 │       └── DetalleLineaViewModel.kt
 
 ├── model/
+
 │   ├── perfil/
+
 │   │   └── PerfilUsuario.kt
 
 │   ├── granja/
+
 │   │   └── Granja.kt
 
 │   ├── galpon/
+
 │   │   └── Galpon.kt
 
 │   ├── linea/
+
 │   │   └── LineaBebedero.kt
 
 │   ├── estado/
+
 │   │   └── EstadoLinea.kt
 
 │   └── historial/
+
 │       └── HistorialTemperatura.kt
 
 
 └── repository/
+
 └── bebedero/
+
 └── BebederoRepository.kt
 
-Código
+
 
 ---
 
@@ -122,7 +146,6 @@ galpones/{granjaId}
 lineas/{galponId}
 detalle/{lineaId}
 
-Código
 
 ### Flujo:
 
