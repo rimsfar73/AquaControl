@@ -1,113 +1,153 @@
-🟦 📄 RESUMEN EJECUTIVO
+📘 README.md — AquaControl 2.0 (MVVM + Compose + Roles + Navigation)
+markdown
+# AquaControl — Android App (Jetpack Compose + MVVM + Roles)
 
-AquaControl es una aplicación móvil desarrollada en Android Studio utilizando Jetpack Compose, MVVM, StateFlow, Navigation Compose y Repository Pattern. El sistema implementa un flujo jerárquico basado en el caso real de producción avícola, permitiendo visualizar:
-•	Granjas disponibles
+AquaControl es una aplicación móvil desarrollada en Android Studio utilizando **Jetpack Compose**, **MVVM**, **StateFlow**, **Navigation Compose** y **Repository Pattern**.  
+Este proyecto corresponde a la **Evaluación Aplicada 2 (EA2)** del módulo de Desarrollo de Aplicaciones Móviles del Instituto Profesional DUOC UC.
 
-•	Galpones asociados
+El sistema simula el flujo operativo del **Caso Galpones**, permitiendo navegar por:
+- Selección de Rol (Operario / Supervisor)
+- Granjas
+- Galpones
+- Líneas de bebederos
+- Detalle de temperatura por línea
 
-•	Líneas de bebederos
+---
 
-•	Estado térmico de cada línea
+## 🚀 Tecnologías utilizadas
 
-•	Alertas críticas, advertencias y condiciones normales
+- Kotlin
+- Jetpack Compose (Material 3)
+- MVVM Architecture
+- StateFlow
+- Navigation Compose
+- Repository Pattern
+- Android Studio Iguana / Koala / Quail
+- Gradle Kotlin DSL
 
-La aplicación simula la lógica de monitoreo presentada en el informe del caso, integrando modelos de datos, repositorios y pantallas funcionales que representan el flujo operativo de un supervisor u operario en terreno.
+---
 
-El proyecto cumple con los requisitos de la Evaluación Aplicada 2 (EA2), demostrando:
+## 📁 Estructura del proyecto (MVVM + Roles)
 
-•	Arquitectura profesional MVVM
-
-•	Navegación jerárquica con parámetros
-
-•	Gestión de estado con StateFlow
-
-•	Componentes reutilizables
-
-•	Documentación técnica completa
-
-•	Diagramas UML del flujo y estructura
-
-AquaControl queda preparado como base para una futura integración con sensores reales, API REST y almacenamiento local mediante Room.
-
-🟦 🎯 OBJETIVO GENERAL
-
-Desarrollar una aplicación móvil funcional que permita visualizar y monitorear la temperatura de las líneas de bebederos en galpones avícolas, utilizando arquitectura MVVM, Jetpack Compose y Navigation, simulando el flujo operativo del caso real presentado en la EA2.
-
-🟦 📌 OBJETIVOS ESPECÍFICOS
-
-✔ 1. Implementar la arquitectura MVVM
-Crear una estructura modular que separe UI, ViewModels, Modelos y Repository, asegurando mantenibilidad y escalabilidad.
-
-✔ 2. Construir la navegación jerárquica del caso
-Implementar rutas dinámicas para recorrer: Granjas → Galpones → Líneas → Detalle de Línea
-
-✔ 3. Modelar los datos del caso Galpones
-Crear clases de datos para:
-
-•	Granja
-
-•	Galpón
-
-•	Línea de Bebedero
-
-•	Estado de Línea
-
-•	Historial de temperatura
-
-✔ 4. Simular el origen de datos
-Implementar un Repository que entregue datos simulados del caso, replicando el comportamiento esperado de un sistema real.
-
-✔ 5. Gestionar estado con StateFlow
-Crear ViewModels que expongan datos reactivos para cada pantalla, asegurando actualizaciones fluidas en Compose.
-
-✔ 6. Construir pantallas funcionales
-Diseñar pantallas Compose para cada nivel del flujo, mostrando información relevante y navegando entre ellas.
-
-✔ 7. Documentar el proyecto
-Generar README, diagramas UML, estructura de commits y documentación EA2 alineada al caso.
-
-🟦 📁 Estructura completa del proyecto (versión profesional — Caso Galpones)
-Dentro de:
 app/src/main/java/com/example/aquacontrol/
-Crea estas carpetas:
+
+├── MainActivity.kt
+
+├── iu/
+│   ├── roles/
+│   │   └── RolSelectionScreen.kt
+│   ├── operario/
+│   │   └── OperarioScreen.kt
+│   ├── supervisor/
+│   │   └── SupervisorScreen.kt
+│   ├── granjas/
+│   │   └── GranjaScreen.kt
+│   ├── galpones/
+│   │   └── GalponScreen.kt
+│   ├── lineas/
+│   │   └── LineaScreen.kt
+│   ├── detalle/
+│   │   └── DetalleLineaScreen.kt
+│   ├── components/
+│   │   └── ReusableButton.kt
+│   └── navigation/
+│       ├── AppNavHost.kt
+│       └── Routes.kt
+
+├── viewmodel/
+│   ├── perfil/
+│   │   └── PerfilViewModel.kt
+│   ├── granjas/
+│   │   └── GranjaViewModel.kt
+│   ├── galpones/
+│   │   └── GalponViewModel.kt
+│   ├── lineas/
+│   │   └── LineaViewModel.kt
+│   └── detalle/
+│       └── DetalleLineaViewModel.kt
+
+├── model/
+│   ├── perfil/
+│   │   └── PerfilUsuario.kt
+│   ├── granja/
+│   │   └── Granja.kt
+│   ├── galpon/
+│   │   └── Galpon.kt
+│   ├── linea/
+│   │   └── LineaBebedero.kt
+│   ├── estado/
+│   │   └── EstadoLinea.kt
+│   └── historial/
+│       └── HistorialTemperatura.kt
+
+└── repository/
+└── bebedero/
+└── BebederoRepository.kt
+
 Código
 
-ui/
+---
 
-    granjas/
-    
-    galpones/
-    
-    lineas/
-    
-    detalle/
-    
-    components/
-    
-    navigation/
-    
-viewmodel/
+## 🧭 Navegación (Roles + Caso Galpones)
 
-    granjas/
-    
-    galpones/
-    
-    lineas/
-    
-    detalle/
-    
-model/
+La app utiliza **Navigation Compose** con un `NavHost` central.
 
-    granja/
-    
-    galpon/
-    
-    linea/
-    
-    estado/
-    
-    historial/
-    
-repository/
+### Rutas principales:
 
-    bebedero/
+roles
+operario
+supervisor
+granjas
+galpones/{granjaId}
+lineas/{galponId}
+detalle/{lineaId}
+
+Código
+
+### Flujo:
+
+1. Selección de rol  
+2. Pantalla de bienvenida según rol  
+3. Granjas  
+4. Galpones  
+5. Líneas  
+6. Detalle de línea  
+
+Los **ViewModels no conocen rutas**, siguiendo la arquitectura MVVM correcta.
+
+---
+
+## 👤 Funcionalidades EA2
+
+- Selección de rol (Operario / Supervisor)
+- Pantallas de bienvenida por rol
+- Navegación jerárquica del Caso Galpones
+- Visualización de:
+  - Granjas
+  - Galpones
+  - Líneas de bebederos
+  - Estado térmico (Normal / Advertencia / Crítico)
+- Repository con datos simulados
+- ViewModels con StateFlow
+- Componentes reutilizables
+- Arquitectura MVVM completa
+- Documentación técnica y UML
+
+---
+
+## 🛠 Instalación
+
+1. Clonar el repositorio:
+   ```bash
+   git clone https://github.com/tuusuario/AquaControl.git
+Abrir el proyecto en Android Studio
+
+Ejecutar en un emulador o dispositivo físico
+
+👥 Autores
+Rimsky Farías Soto — UI, Navegación, Arquitectura
+
+Christian Quiroz Roa — Modelos, Repository, ViewModels
+
+📄 Licencia
+Este proyecto es de uso académico para la Evaluación Aplicada 2 (EA2) — DUOC UC.
