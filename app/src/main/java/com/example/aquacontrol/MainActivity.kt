@@ -3,32 +3,17 @@ package com.example.aquacontrol
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.aquacontrol.ui.theme.AquaControlTheme
+import com.example.aquacontrol.iu.navigation.AppNavHost
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
-            MaterialTheme {
-                PantallaInicio()
+            AquaControlTheme {
+                AppNavHost()   // Navegación completa de AquaControl 3.0
             }
         }
-    }
-}
-
-@Composable
-fun PantallaInicio() {
-    Text("Hola Compose mundo")
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewPantallaInicio() {
-    AquaControlTheme {
-        PantallaInicio()
     }
 }

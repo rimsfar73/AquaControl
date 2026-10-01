@@ -11,17 +11,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.viewmodel.lineas.LineaUiState
 import com.example.aquacontrol.viewmodel.lineas.LineaViewModel
 
 @Composable
 fun LineaScreen(
     navController: NavController,
+    galponId: Int,
     viewModel: LineaViewModel = viewModel()
 ) {
-    // Se reemplazará por el ID recibido desde la navegación.
-    val galponId = 2
 
     LaunchedEffect(galponId) {
         viewModel.cargarLineas(galponId)
@@ -49,7 +47,7 @@ fun LineaScreen(
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
                             .clickable {
-                                navController.navigate(Routes.DETALLE_LINEA)
+                                navController.navigate("detalleLinea/${linea.id}")
                             }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {

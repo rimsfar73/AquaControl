@@ -5,16 +5,14 @@ plugins {
 
 android {
     namespace = "com.example.aquacontrol"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 37
+
+    // Requerido por Compose 1.12.1
 
     defaultConfig {
         applicationId = "com.example.aquacontrol"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -28,10 +26,12 @@ android {
             }
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     buildFeatures {
         compose = true
     }
@@ -41,8 +41,9 @@ android {
     }
 }
 
+
 dependencies {
-    // BOM de Compose (maneja versiones automáticamente)
+    // BOM de Compose (controla versiones automáticamente)
     implementation(platform(libs.androidx.compose.bom))
 
     // Jetpack Compose UI
@@ -53,7 +54,7 @@ dependencies {
     // Material 3
     implementation(libs.androidx.compose.material3)
 
-    // Material Icons (NECESARIO para Home, Map, Notifications)
+    // Material Icons (necesario para íconos extendidos)
     implementation("androidx.compose.material:material-icons-extended")
 
     // Activity Compose
@@ -65,7 +66,7 @@ dependencies {
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // Navigation Compose (tu versión estaba bien, pero mejor usar la última estable)
+    // Navigation Compose (última estable)
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // Tests
@@ -79,4 +80,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
 

@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 import com.example.aquacontrol.iu.components.BottomBar
 import com.example.aquacontrol.iu.roles.RolSelectionScreen
@@ -17,12 +18,14 @@ import com.example.aquacontrol.iu.granjas.GranjaScreen
 import com.example.aquacontrol.iu.galpones.GalponScreen
 import com.example.aquacontrol.iu.lineas.LineaScreen
 import com.example.aquacontrol.iu.detalle.DetalleLineaScreen
-import com.example.aquacontrol.iu.flushing.FlushingScreen   // ← NUEVO
+import com.example.aquacontrol.iu.flushing.FlushingScreen
+import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
 
 @Composable
 fun AppNavHost() {
 
     val navController: NavHostController = rememberNavController()
+    val perfilViewModel: PerfilViewModel = viewModel()
 
     Scaffold(
         bottomBar = { BottomBar(navController) }
@@ -34,45 +37,40 @@ fun AppNavHost() {
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            // --- Nivel 0: Selección de Rol ---
             composable(Routes.ROLE_SELECTION) {
-                RolSelectionScreen(navController)
+                RolSelectionScreen(navController, perfilViewModel)
             }
 
-            // --- Nivel 1: Operario ---
             composable(Routes.OPERARIO_HOME) {
-                OperarioScreen(navController)
+                OperarioScreen(navController, perfilViewModel)
             }
 
-            // --- Nivel 2: Supervisor ---
             composable(Routes.SUPERVISOR_HOME) {
-                SupervisorScreen(navController)
+                SupervisorScreen(navController, perfilViewModel)
             }
 
-            // --- Nivel 3: Granjas ---
             composable(Routes.GRANJAS) {
                 GranjaScreen(navController)
             }
 
-            // --- Nivel 4: Galpones ---
-            composable(Routes.GALPONES) {
-                GalponScreen(navController)
+            composable("galpones/{granjaId}") { backStack ->
+                val granjaId = backStack.arguments?.getString("granjaId")?.toIntOrNull() ?: 0
+                GalponScreen(navController, granjaId)
             }
 
-            // --- Nivel 5: Líneas ---
-            composable(Routes.LINEAS) {
-                LineaScreen(navController)
+            composable("lineas/{galponId}") { backStack ->
+                val galponId = backStack.arguments?.getString("galponId")?.toIntOrNull() ?: 0
+                LineaScreen(navController, galponId)
             }
 
-            // --- Nivel 6: Detalle de Línea ---
             composable("${Routes.DETALLE_LINEA}/{lineaId}") { backStack ->
                 val lineaId = backStack.arguments?.getString("lineaId")?.toIntOrNull() ?: 0
                 DetalleLineaScreen(navController, lineaId)
             }
 
-            // --- Nivel 7: Flushing ---
-            composable(Routes.FLUSHING) {
-                FlushingScreen(navController)
+            composable("flushing/{lineaId}") { backStack ->
+                val lineaId = backStack.arguments?.getString("lineaId")?.toIntOrNull() ?: 0
+                FlushingScreen(navController, lineaId)
             }
         }
     }
