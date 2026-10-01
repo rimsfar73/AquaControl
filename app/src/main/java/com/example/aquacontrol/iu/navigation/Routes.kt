@@ -23,4 +23,7 @@ object Routes {
     // --- Nivel 4: Detalle de Línea ---
     const val DETALLE_LINEA = "detalleLinea"
     const val DETALLE_LINEA_PARAM = "detalleLinea/{galponId}/{lineaId}"
+
+    // --- Nivel 5: Flushing ---
+    const val FLUSHING = "flushing"
 }
