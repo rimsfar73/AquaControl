@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.viewmodel.granjas.GranjaUiState
 import com.example.aquacontrol.viewmodel.granjas.GranjaViewModel
 
@@ -42,7 +41,8 @@ fun GranjaScreen(
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
                             .clickable {
-                                navController.navigate(Routes.GALPONES)
+                                navController.navigate("galpones/${granja.id}")
+
                             }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {

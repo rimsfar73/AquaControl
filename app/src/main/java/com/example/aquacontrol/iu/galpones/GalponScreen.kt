@@ -11,18 +11,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.viewmodel.galpones.GalponUiState
 import com.example.aquacontrol.viewmodel.galpones.GalponViewModel
 
 @Composable
 fun GalponScreen(
     navController: NavController,
+    granjaId: Int,
     viewModel: GalponViewModel = viewModel()
 ) {
-    // Se reemplazará por el ID recibido desde la navegación.
-    val granjaId = 1
-
     LaunchedEffect(granjaId) {
         viewModel.cargarGalpones(granjaId)
     }
@@ -45,7 +42,8 @@ fun GalponScreen(
                             .fillMaxWidth()
                             .padding(vertical = 6.dp)
                             .clickable {
-                                navController.navigate(Routes.LINEAS)
+                                navController.navigate("lineas/${galpon.id}")
+
                             }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {

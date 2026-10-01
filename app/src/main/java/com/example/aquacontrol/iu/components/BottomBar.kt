@@ -10,28 +10,26 @@ import com.example.aquacontrol.iu.navigation.Routes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Notifications
 
 @Composable
 fun BottomBar(navController: NavController) {
+
+    val currentRoute = navController.currentBackStackEntry?.destination?.route
+
     NavigationBar {
+
         NavigationBarItem(
-            selected = false,
+            selected = currentRoute == Routes.ROLE_SELECTION,
             onClick = { navController.navigate(Routes.ROLE_SELECTION) },
             icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
             label = { Text("Inicio") }
         )
+
         NavigationBarItem(
-            selected = false,
+            selected = currentRoute == Routes.GRANJAS,
             onClick = { navController.navigate(Routes.GRANJAS) },
             icon = { Icon(Icons.Default.Map, contentDescription = "Granjas") },
             label = { Text("Granjas") }
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = { navController.navigate(Routes.LINEAS) },
-            icon = { Icon(Icons.Default.Notifications, contentDescription = "Alertas") },
-            label = { Text("Alertas") }
         )
     }
 }

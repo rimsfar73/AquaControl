@@ -12,14 +12,11 @@ import androidx.navigation.NavController
 import com.example.aquacontrol.viewmodel.flushing.FlushingUiState
 import com.example.aquacontrol.viewmodel.flushing.FlushingViewModel
 
-@Composable
-fun FlushingScreen(
-    navController: NavController,
-    viewModel: FlushingViewModel = viewModel()
+@Composable fun FlushingScreen(
+navController: NavController,
+lineaId: Int,
+viewModel: FlushingViewModel = viewModel()
 ) {
-    // Se reemplazará por el ID recibido desde la navegación.
-    val lineaId = 1
-
     LaunchedEffect(lineaId) {
         viewModel.cargarFlushing(lineaId)
     }
