@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
 
 import com.example.aquacontrol.iu.components.BottomBar
 import com.example.aquacontrol.iu.roles.RolSelectionScreen
