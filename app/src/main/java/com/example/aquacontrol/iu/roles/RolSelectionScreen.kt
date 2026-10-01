@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aquacontrol.model.perfil.PerfilUsuario
-import com.example.aquacontrol.ui.navigation.Routes
+import com.example.aquacontrol.iu.navigation.Routes
 
 @Composable
 fun RolSelectionScreen(navController: NavController) {
