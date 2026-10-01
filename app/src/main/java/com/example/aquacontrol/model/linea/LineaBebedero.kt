@@ -7,5 +7,6 @@ data class LineaBebedero(
     val nombre: String,
     val temperatura: Double,
     val estado: EstadoLinea,
-    val actualizado: String
+    val actualizado: String,
+    val galponId: Int
 )

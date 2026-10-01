@@ -15,6 +15,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.viewmodel.galpones.GalponViewModel
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 
 @Composable
 fun GalponScreen(

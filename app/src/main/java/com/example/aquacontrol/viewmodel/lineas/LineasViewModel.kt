@@ -14,7 +14,7 @@ class LineaViewModel(
     private val _lineas = MutableStateFlow<List<LineaBebedero>>(emptyList())
     val lineas: StateFlow<List<LineaBebedero>> = _lineas.asStateFlow()
 
-    fun cargar(galponId: Int) {
+    fun cargarLineas(galponId: Int) {
         _lineas.value = repo.obtenerLineas(galponId)
     }
 }

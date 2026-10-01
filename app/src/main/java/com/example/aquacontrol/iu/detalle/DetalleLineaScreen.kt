@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.aquacontrol.viewmodel.detalle.DetalleLineaViewModel
+import androidx.compose.foundation.layout.padding
 
 @Composable
 fun DetalleLineaScreen(
