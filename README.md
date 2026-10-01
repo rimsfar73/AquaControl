@@ -13,6 +13,10 @@ El sistema simula el flujo operativo del **Caso Galpones**, permitiendo navegar 
 - Detalle de temperatura por línea
 
 ---
+Prototipo
+
+https://vistausariofullstack.my.canva.site/aquacontrol-2-0-x-arizt-a
+
 
 ## 🚀 Tecnologías utilizadas
 
