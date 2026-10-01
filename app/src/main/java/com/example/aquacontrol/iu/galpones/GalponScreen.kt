@@ -1,54 +1,74 @@
 package com.example.aquacontrol.iu.galpones
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.aquacontrol.iu.navigation.Routes
+import com.example.aquacontrol.viewmodel.galpones.GalponUiState
 import com.example.aquacontrol.viewmodel.galpones.GalponViewModel
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
 
 @Composable
 fun GalponScreen(
     navController: NavController,
     viewModel: GalponViewModel = viewModel()
 ) {
+    // Se reemplazará por el ID recibido desde la navegación.
+    val granjaId = 1
 
-    // Cargar galpones de la granja seleccionada (por ahora fijo)
-    LaunchedEffect(Unit) {
-        viewModel.cargarGalpones(granjaId = 1)
+    LaunchedEffect(granjaId) {
+        viewModel.cargarGalpones(granjaId)
     }
 
-    // Observar lista de galpones
-    val galpones = viewModel.galpones.collectAsState().value
+    val estado by viewModel.uiState.collectAsState()
 
     Column(modifier = Modifier.padding(16.dp)) {
-
         Text("Galpones")
         Spacer(modifier = Modifier.height(12.dp))
 
-        galpones.forEach { galpon ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp)
-                    .clickable {
-                        navController.navigate(Routes.LINEAS)
+        when (val actual = estado) {
+            GalponUiState.Loading -> {
+                CircularProgressIndicator()
+            }
+
+            is GalponUiState.Success -> {
+                actual.galpones.forEach { galpon ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp)
+                            .clickable {
+                                navController.navigate(Routes.LINEAS)
+                            }
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Galpón: ${galpon.nombre}")
+                            Text("ID: ${galpon.id}")
+                        }
                     }
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Galpón: ${galpon.nombre}")
-                    Text("ID: ${galpon.id}")
+                }
+            }
+
+            GalponUiState.Empty -> {
+                Text("Esta granja no tiene galpones registrados.")
+            }
+
+            is GalponUiState.Error -> {
+                Text(actual.mensaje)
+
+                Button(
+                    onClick = {
+                        viewModel.cargarGalpones(granjaId)
+                    }
+                ) {
+                    Text("Reintentar")
                 }
             }
         }
