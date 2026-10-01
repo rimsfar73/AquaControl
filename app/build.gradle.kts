@@ -42,28 +42,41 @@ android {
 }
 
 dependencies {
+    // BOM de Compose (maneja versiones automáticamente)
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.material3)
+
+    // Jetpack Compose UI
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+
+    // Material 3
+    implementation(libs.androidx.compose.material3)
+
+    // Material Icons (NECESARIO para Home, Map, Notifications)
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // Activity Compose
+    implementation(libs.androidx.activity.compose)
+
+    // Core KTX
     implementation(libs.androidx.core.ktx)
+
+    // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // Jetpack Compose Navigation (FALTA — debes agregarlo)
-    implementation("androidx.navigation:navigation-compose:2.7.0")
+    // Navigation Compose (tu versión estaba bien, pero mejor usar la última estable)
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.activity:activity-compose")
-
+    // Tests
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // Debug tools
     debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
