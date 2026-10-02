@@ -11,9 +11,7 @@ object Routes {
     const val GRANJAS = "granjas"
 
     // --- Nivel 2: Galpones ---
-    // Ruta base (sin parámetros)
     const val GALPONES = "galpones"
-    // Ruta con parámetro
     const val GALPONES_PARAM = "galpones/{granjaId}"
 
     // --- Nivel 3: Líneas ---
@@ -22,8 +20,9 @@ object Routes {
 
     // --- Nivel 4: Detalle de Línea ---
     const val DETALLE_LINEA = "detalleLinea"
-    const val DETALLE_LINEA_PARAM = "detalleLinea/{galponId}/{lineaId}"
+    const val DETALLE_LINEA_PARAM = "detalleLinea/{lineaId}"
 
     // --- Nivel 5: Flushing ---
     const val FLUSHING = "flushing"
+    const val FLUSHING_PARAM = "flushing/{lineaId}"
 }
