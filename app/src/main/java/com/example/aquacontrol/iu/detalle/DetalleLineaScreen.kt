@@ -41,6 +41,12 @@ fun DetalleLineaScreen(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = { navController.navigate("flushing/$lineaId") }) {
+                    Text("Ver flushing")
+                }
             }
 
             DetalleLineaUiState.Empty -> {
