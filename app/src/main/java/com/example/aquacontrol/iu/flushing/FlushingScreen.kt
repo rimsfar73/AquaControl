@@ -6,17 +6,21 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.aquacontrol.viewmodel.flushing.FlushingUiState
 import com.example.aquacontrol.viewmodel.flushing.FlushingViewModel
 
-@Composable fun FlushingScreen(
-navController: NavController,
-lineaId: Int,
-viewModel: FlushingViewModel = viewModel()
+@Composable
+fun FlushingScreen(
+    navController: NavController,
+    lineaId: Int,
+    viewModel: FlushingViewModel = viewModel()
 ) {
+    var registrado by remember { mutableStateOf(false) }
+
     LaunchedEffect(lineaId) {
         viewModel.cargarFlushing(lineaId)
     }
@@ -26,6 +30,26 @@ viewModel: FlushingViewModel = viewModel()
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Eventos de Flushing")
         Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = {
+                registrado = true
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Simular registro")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (registrado) {
+            Text(
+                text = "Flushing registrado correctamente",
+                color = Color(0xff08BE23)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         when (val actual = estado) {
             FlushingUiState.Loading -> {
