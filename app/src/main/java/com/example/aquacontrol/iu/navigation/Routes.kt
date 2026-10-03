@@ -20,9 +20,17 @@ object Routes {
 
     // --- Nivel 4: Detalle de Línea ---
     const val DETALLE_LINEA = "detalleLinea"
-    const val DETALLE_LINEA_PARAM = "detalleLinea/{lineaId}"
+    const val DETALLE_LINEA_PARAM = "detalleLinea/{galponId}/{lineaId}"
 
-    // --- Nivel 5: Flushing ---
+    // --- Nivel 5: Alertas ---
+    const val ALERTAS = "alertas"
+
+    // --- Nivel 6: Flushing ---
+    // Flushing general (Operario)
     const val FLUSHING = "flushing"
+
+    // Flushing por línea (Supervisor)
     const val FLUSHING_PARAM = "flushing/{lineaId}"
+    const val REGISTRAR_FLUSHING = "registrarFlushing"
+
 }

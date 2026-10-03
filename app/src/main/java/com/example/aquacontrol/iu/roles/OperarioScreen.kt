@@ -74,7 +74,7 @@ fun OperarioScreen(
         Spacer(Modifier.height(8.dp))
 
         Button(
-            onClick = { /* Navegación a flushing si aplica */ },
+            onClick = { navController.navigate(Routes.FLUSHING) },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = RojoAriztia)
         ) {

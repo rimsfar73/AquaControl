@@ -18,7 +18,10 @@ import com.example.aquacontrol.iu.granjas.GranjaScreen
 import com.example.aquacontrol.iu.galpones.GalponScreen
 import com.example.aquacontrol.iu.lineas.LineaScreen
 import com.example.aquacontrol.iu.detalle.DetalleLineaScreen
+import com.example.aquacontrol.iu.alertas.AlertasScreen
+import com.example.aquacontrol.iu.flushing.FlushingHomeScreen
 import com.example.aquacontrol.iu.flushing.FlushingScreen
+import com.example.aquacontrol.iu.flushing.RegistrarFlushingScreen
 import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
 
 @Composable
@@ -37,6 +40,7 @@ fun AppNavHost() {
             modifier = Modifier.padding(innerPadding)
         ) {
 
+            // --- Roles ---
             composable(Routes.ROLE_SELECTION) {
                 RolSelectionScreen(navController, perfilViewModel)
             }
@@ -49,28 +53,52 @@ fun AppNavHost() {
                 SupervisorScreen(navController, perfilViewModel)
             }
 
+            // --- Granjas ---
             composable(Routes.GRANJAS) {
                 GranjaScreen(navController)
             }
 
+            // --- Galpones ---
             composable("galpones/{granjaId}") { backStack ->
                 val granjaId = backStack.arguments?.getString("granjaId")?.toIntOrNull() ?: 0
                 GalponScreen(navController, granjaId)
             }
 
+            // --- Líneas ---
             composable("lineas/{galponId}") { backStack ->
                 val galponId = backStack.arguments?.getString("galponId")?.toIntOrNull() ?: 0
                 LineaScreen(navController, galponId)
             }
 
-            composable("${Routes.DETALLE_LINEA}/{lineaId}") { backStack ->
+            // --- Detalle de línea ---
+            composable(Routes.DETALLE_LINEA_PARAM) { backStack ->
+                val galponId = backStack.arguments?.getString("galponId")?.toIntOrNull() ?: 0
                 val lineaId = backStack.arguments?.getString("lineaId")?.toIntOrNull() ?: 0
+
+                // Tu pantalla SOLO necesita lineaId
                 DetalleLineaScreen(navController, lineaId)
             }
 
-            composable("flushing/{lineaId}") { backStack ->
+
+            // --- Flushing por línea (Supervisor) ---
+            composable(Routes.FLUSHING_PARAM) { backStack ->
                 val lineaId = backStack.arguments?.getString("lineaId")?.toIntOrNull() ?: 0
                 FlushingScreen(navController, lineaId)
+            }
+
+            // --- Alertas ---
+            composable(Routes.ALERTAS) {
+                AlertasScreen(navController)
+            }
+
+            // --- Flushing general (Operario) ---
+            composable(Routes.FLUSHING) {
+                FlushingHomeScreen(navController)
+            }
+
+            // --- Registrar Flushing ---
+            composable(Routes.REGISTRAR_FLUSHING) {
+                RegistrarFlushingScreen(navController)
             }
         }
     }
