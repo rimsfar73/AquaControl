@@ -6,7 +6,8 @@ data class LineaBebedero(
     val id: Int,
     val nombre: String,
     val temperatura: Double,
-    val estado: EstadoLinea,
     val actualizado: String,
     val galponId: Int
-)
+) {
+    val estado: EstadoLinea = EstadoLinea.desdeTemperatura(temperatura)
+}

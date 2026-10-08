@@ -1,11 +1,10 @@
 package com.example.aquacontrol.repository.bebedero
 
-import com.example.aquacontrol.model.estado.EstadoLinea
+import com.example.aquacontrol.model.flushing.EventoFlushing
 import com.example.aquacontrol.model.galpon.Galpon
 import com.example.aquacontrol.model.granja.Granja
-import com.example.aquacontrol.model.linea.LineaBebedero
 import com.example.aquacontrol.model.historial.HistorialTemperatura
-import com.example.aquacontrol.model.flushing.EventoFlushing
+import com.example.aquacontrol.model.linea.LineaBebedero
 
 class BebederoRepository {
 
@@ -33,7 +32,6 @@ class BebederoRepository {
                 id = 1,
                 nombre = "Línea 1",
                 temperatura = 18.5,
-                estado = EstadoLinea.NORMAL,
                 actualizado = "2026-09-16 14:00",
                 galponId = 1
             ),
@@ -41,7 +39,6 @@ class BebederoRepository {
                 id = 2,
                 nombre = "Línea 2",
                 temperatura = 22.1,
-                estado = EstadoLinea.ADVERTENCIA,
                 actualizado = "2026-09-16 14:05",
                 galponId = 1
             ),
@@ -49,7 +46,6 @@ class BebederoRepository {
                 id = 3,
                 nombre = "Línea 1",
                 temperatura = 28.7,
-                estado = EstadoLinea.CRITICO,
                 actualizado = "2026-09-16 14:10",
                 galponId = 2
             ),
@@ -57,7 +53,6 @@ class BebederoRepository {
                 id = 4,
                 nombre = "Línea 1",
                 temperatura = 19.0,
-                estado = EstadoLinea.NORMAL,
                 actualizado = "2026-09-16 14:15",
                 galponId = 3
             ),
@@ -65,7 +60,6 @@ class BebederoRepository {
                 id = 5,
                 nombre = "Línea 1",
                 temperatura = 18.8,
-                estado = EstadoLinea.NORMAL,
                 actualizado = "2026-09-16 14:20",
                 galponId = 4
             )
@@ -73,6 +67,7 @@ class BebederoRepository {
 
         return lineas.filter { it.galponId == galponId }
     }
+
     fun obtenerHistorial(lineaId: Int): List<HistorialTemperatura> {
         val historial = listOf(
             HistorialTemperatura(
@@ -115,6 +110,7 @@ class BebederoRepository {
 
         return historial.filter { it.lineaId == lineaId }
     }
+
     fun obtenerFlushing(lineaId: Int): List<EventoFlushing> {
         val eventos = listOf(
             EventoFlushing(
