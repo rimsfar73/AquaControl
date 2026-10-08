@@ -1,38 +1,85 @@
-# AquaControl 3.0 — Android App
+# AquaControl 4.0 — Android App
 
-Aplicación móvil desarrollada en **Android Studio** utilizando **Kotlin, Jetpack Compose y arquitectura MVVM**.
+Aplicación móvil desarrollada en **Android Studio**, utilizando **Kotlin, Jetpack Compose, MVVM, Repository Pattern y DataSources locales/remotos**.
 
-Este proyecto corresponde a la **Evaluación Aplicada 2 (EA2)** del módulo de Desarrollo de Aplicaciones Móviles de **DUOC UC**.
+Este proyecto corresponde a la **Evaluación Aplicada 2 (EA2)** del módulo **Desarrollo de Aplicaciones Móviles — DUOC UC**.
 
-La versión **3.0** incorpora mejoras en arquitectura, navegación, documentación y estructura del proyecto, además de un nuevo módulo técnico de **Flushing**, que simula el proceso de limpieza térmica de las líneas de bebederos.
+La versión **4.0** representa una actualización mayor respecto a la versión 3.x, incorporando mejoras en arquitectura, navegación, estructura del proyecto, configuración de Gradle y un módulo de **Flushing completamente refactorizado**.
 
 ---
 
-## 📱 Funcionalidades
+## 🆕 ¿Qué trae AquaControl 4.0?
 
-* Selección de rol:
+### ✔ Cambios mayores respecto a 3.x
 
-  * Operario
-  * Supervisor
+1. **Migración completa del módulo remoto de Flushing a Kotlin**
+
+   `FlushingRemoteDataSource.java` → `FlushingRemoteDataSource.kt`
+
+2. **Navegación Compose reorganizada y modularizada**
+
+   Nuevos `NavHost` por feature, rutas corregidas e integración del flujo de Flushing.
+
+3. **Estructura de datos actualizada**
+
+   DTOs revisados, repositorios reorganizados y DataSources especializados.
+
+4. **Configuración del proyecto modernizada**
+
+   * `build.gradle.kts` optimizado.
+   * `settings.gradle.kts` corregido.
+   * Catálogo de versiones mediante `libs.versions.toml`.
+
+5. **Arquitectura organizada por features**
+
+   Carpetas reorganizadas para representar los dominios funcionales de la aplicación.
+
+6. **Documentación técnica actualizada**
+
+   README, estructura del proyecto y documentación de la arquitectura MVVM.
+
+---
+
+## 📱 Funcionalidades principales
+
+### Gestión de roles
+
+* Operario.
+* Supervisor.
 * Pantallas de bienvenida según el rol seleccionado.
-* Navegación jerárquica:
 
-  * Granjas
-  * Galpones
-  * Líneas de bebederos
-  * Detalle de línea
-* Visualización del estado térmico:
+### Navegación jerárquica
 
-  * Normal
-  * Advertencia
-  * Crítico
-* Módulo de **Flushing** para simular la limpieza térmica de líneas.
-* Repository con datos simulados.
-* ViewModels utilizando `StateFlow`.
-* Componentes UI reutilizables.
-* Navegación mediante **Navigation Compose**.
-* Arquitectura **MVVM**.
-* Documentación técnica y UML actualizados a la versión 3.0.
+* Granjas.
+* Galpones.
+* Líneas de bebederos.
+* Detalle de línea.
+
+### Monitoreo térmico
+
+Visualización del estado térmico de las líneas:
+
+* 🟢 **Normal**
+* 🟡 **Advertencia**
+* 🔴 **Crítico**
+
+### 💧 Módulo Flushing 4.0
+
+* Simulación de limpieza térmica.
+* Registro de flushing.
+* Detalle de flushing.
+* ViewModels dedicados.
+* DataSources local y remoto.
+* Repositorio especializado.
+
+### Arquitectura y UI
+
+* Componentes UI reutilizables mediante Jetpack Compose.
+* ViewModels con `StateFlow`.
+* Repository Pattern.
+* DataSources locales y remotos.
+* Arquitectura MVVM.
+* Navegación mediante Navigation Compose.
 
 ---
 
@@ -40,150 +87,213 @@ La versión **3.0** incorpora mejoras en arquitectura, navegación, documentaci�
 
 Prototipo desarrollado en Canva:
 
-**[Ver prototipo AquaControl 3.0](https://vistausariofullstack.my.canva.site/aquacontrol-2-0-x-arizt-a)**
+👉 **[Ver prototipo de AquaControl](https://vistausariofullstack.my.canva.site/aquacontrol-2-0-x-arizt-a)**
 
 ---
 
 ## 🚀 Tecnologías utilizadas
 
-| Tecnología             | Uso                           |
-| ---------------------- | ----------------------------- |
-| **Kotlin**             | Lenguaje principal            |
-| **Jetpack Compose**    | Desarrollo de interfaz        |
-| **Material 3**         | Componentes y diseño UI       |
-| **MVVM**               | Arquitectura de la aplicación |
-| **StateFlow**          | Gestión de estados            |
-| **Navigation Compose** | Navegación entre pantallas    |
-| **Repository Pattern** | Gestión del origen de datos   |
-| **Gradle Kotlin DSL**  | Configuración y construcción  |
-| **Android Studio**     | Entorno de desarrollo         |
+| Tecnología             | Uso                                   |
+| ---------------------- | ------------------------------------- |
+| **Kotlin**             | Lenguaje principal                    |
+| **Jetpack Compose**    | Desarrollo de UI declarativa          |
+| **Material 3**         | Componentes y sistema de diseño       |
+| **MVVM**               | Arquitectura de presentación          |
+| **StateFlow**          | Gestión reactiva del estado           |
+| **Navigation Compose** | Navegación declarativa                |
+| **Room**               | Persistencia local                    |
+| **Retrofit**           | Acceso remoto                         |
+| **Repository Pattern** | Abstracción y gestión de datos        |
+| **Gradle Kotlin DSL**  | Configuración del proyecto            |
+| **libs.versions.toml** | Catálogo centralizado de dependencias |
 
 ---
 
 ## 🏗️ Arquitectura
 
-El proyecto utiliza una arquitectura basada en **MVVM (Model-View-ViewModel)**, separando la interfaz de usuario, la gestión de estados, los modelos de dominio y el acceso a los datos.
+AquaControl 4.0 implementa una arquitectura basada en **MVVM + Repository Pattern + DataSources**, separando las responsabilidades de presentación, lógica y acceso a datos.
 
 ```text
-UI
- │
- ▼
-ViewModel
- │
- ▼
+UI — Jetpack Compose
+        │
+        ▼
+ViewModel — StateFlow
+        │
+        ▼
 Repository
- │
- ▼
-Model / Data
+        │
+   ┌────┴────┐
+   ▼         ▼
+Local      Remote
+DataSource DataSource
+   │         │
+   └────┬────┘
+        ▼
+ Modelos / DTOs
 ```
 
-Los **ViewModels no conocen las rutas de navegación**, manteniendo separadas las responsabilidades de la lógica de presentación y la navegación.
+### Principios aplicados
+
+* **Single Activity Architecture**
+* **MVVM**
+* **Navegación modular por features**
+* **Repositorios desacoplados**
+* **DTOs y modelos por dominio**
+* **DataSources especializados**
+* **StateFlow para gestión reactiva del estado**
+* **Gradle Kotlin DSL**
+* **Version Catalog mediante `libs.versions.toml`**
 
 ---
 
 ## 📁 Estructura del proyecto
 
+La estructura de AquaControl 4.0 se organiza por responsabilidades y dominios funcionales.
+
 ```text
-app/src/main/java/com/example/aquacontrol/
-│
-├── MainActivity.kt
-│
-├── ui/                              # Capa de interfaz de usuario
-│   ├── roles/
-│   │   └── RolSelectionScreen.kt
-│   │
-│   ├── operario/
-│   │   └── OperarioScreen.kt
-│   │
-│   ├── supervisor/
-│   │   └── SupervisorScreen.kt
-│   │
-│   ├── granjas/
-│   │   └── GranjaScreen.kt
-│   │
-│   ├── galpones/
-│   │   └── GalponScreen.kt
-│   │
-│   ├── lineas/
-│   │   └── LineaScreen.kt
-│   │
-│   ├── detalle/
-│   │   └── DetalleLineaScreen.kt
-│   │
-│   ├── flushing/
-│   │   └── FlushingScreen.kt
-│   │
-│   ├── components/
-│   │   └── ReusableButton.kt
-│   │
-│   └── navigation/
-│       ├── AppNavHost.kt
-│       └── Routes.kt
-│
-├── viewmodel/                       # Capa ViewModel
-│   ├── perfil/
-│   │   └── PerfilViewModel.kt
-│   │
-│   ├── granjas/
-│   │   └── GranjaViewModel.kt
-│   │
-│   ├── galpones/
-│   │   └── GalponViewModel.kt
-│   │
-│   ├── lineas/
-│   │   └── LineaViewModel.kt
-│   │
-│   ├── detalle/
-│   │   └── DetalleLineaViewModel.kt
-│   │
-│   └── flushing/
-│       └── FlushingViewModel.kt
-│
-├── model/                           # Modelos de dominio
-│   ├── perfil/
-│   │   └── PerfilUsuario.kt
-│   │
-│   ├── granja/
-│   │   └── Granja.kt
-│   │
-│   ├── galpon/
-│   │   └── Galpon.kt
-│   │
-│   ├── linea/
-│   │   ├── LineaBebedero.kt
-│   │   └── EstadoLinea.kt
-│   │
-│   ├── historial/
-│   │   └── HistorialTemperatura.kt
-│   │
-│   └── flushing/
-│       └── Flushing.kt
-│
-└── repository/                      # Capa de acceso a datos
-    └── bebedero/
-        └── BebederoRepository.kt
+app/
+└── src/
+    └── main/
+        └── java/com/example/aquacontrol/
+            │
+            ├── data/
+            │   ├── flushing/
+            │   │   ├── local/
+            │   │   │   ├── FlushingDao
+            │   │   │   ├── FlushingEntity
+            │   │   │   └── FlushingLocalDataSource
+            │   │   │
+            │   │   ├── remote/
+            │   │   │   ├── FlushingApiClient
+            │   │   │   ├── FlushingApiService
+            │   │   │   ├── FlushingRemoteDataSource
+            │   │   │   └── FlushingDataSource
+            │   │   │
+            │   │   └── AppDatabase
+            │   │
+            │   └── repository/
+            │       ├── bebedero/
+            │       │   └── BebederoRepository
+            │       │
+            │       ├── data/
+            │       │   └── FlushingRemoteRepository
+            │       │
+            │       └── flushing/
+            │           ├── FlushingRepository
+            │           └── FlushingRepositoryImpl
+            │
+            ├── iu/
+            │   ├── alertas/
+            │   │   └── AlertasScreen.kt
+            │   │
+            │   ├── components/
+            │   │   ├── BottomBar.kt
+            │   │   └── ReusableButton.kt
+            │   │
+            │   ├── detalle/
+            │   │   └── DetalleLineaScreen.kt
+            │   │
+            │   ├── flushing/
+            │   │   ├── FlushingDetalleScreen.kt
+            │   │   ├── FlushingHomeScreen.kt
+            │   │   ├── FlushingNavHost.kt
+            │   │   ├── FlushingScreen.kt
+            │   │   └── RegistrarFlushingScreen.kt
+            │   │
+            │   ├── galpones/
+            │   │   └── GalponScreen.kt
+            │   │
+            │   ├── granjas/
+            │   │   └── GranjaScreen.kt
+            │   │
+            │   ├── lineas/
+            │   │   └── LineaScreen.kt
+            │   │
+            │   ├── navigation/
+            │   │   ├── AppNavHost.kt
+            │   │   └── Routes
+            │   │
+            │   └── roles/
+            │       ├── OperarioScreen.kt
+            │       ├── RolSelectionScreen.kt
+            │       └── SupervisorScreen.kt
+            │
+            ├── model/
+            │   ├── estado/
+            │   │   └── EstadoLinea
+            │   │
+            │   ├── flushing/
+            │   │   ├── EventoFlushing
+            │   │   └── FlushingDTO
+            │   │
+            │   ├── galpon/
+            │   │   └── Galpon
+            │   │
+            │   ├── granja/
+            │   │   └── Granja
+            │   │
+            │   ├── historial/
+            │   │   └── HistorialTemperatura
+            │   │
+            │   ├── linea/
+            │   │   └── LineaBebedero
+            │   │
+            │   └── perfil/
+            │       └── Perfil
+            │
+            ├── theme/
+            │   ├── Color.kt
+            │   ├── Theme.kt
+            │   └── Type.kt
+            │
+            ├── viewmodel/
+            │   ├── detalle/
+            │   │   ├── DetalleLineaUiState
+            │   │   └── DetalleLineaViewModel
+            │   │
+            │   ├── flushing/
+            │   │   ├── FlushingUiState
+            │   │   ├── FlushingViewModel
+            │   │   └── RegistrarFlushingViewModel
+            │   │
+            │   ├── galpones/
+            │   │   ├── GalponUiState
+            │   │   └── GalponViewModel
+            │   │
+            │   ├── granjas/
+            │   │   ├── GranjaUiState
+            │   │   └── GranjaViewModel
+            │   │
+            │   ├── lineas/
+            │   │   ├── LineasViewModel.kt
+            │   │   └── LineaUiState
+            │   │
+            │   └── perfil/
+            │       └── PerfilViewModel
+            │
+            └── MainActivity
 ```
 
 ---
 
 ## 🧭 Navegación
 
-La aplicación utiliza **Navigation Compose** mediante un `NavHost` central.
-
 ### Rutas principales
 
 ```text
 roles
-operario
-supervisor
+├── operario
+└── supervisor
+
 granjas
-galpones/{granjaId}
-lineas/{galponId}
-detalle/{lineaId}
+└── galpones/{granjaId}
+    └── lineas/{galponId}
+        └── detalle/{lineaId}
+
 flushing
 ```
 
-### Flujo de navegación
+### Flujo general
 
 ```text
 Selección de rol
@@ -193,16 +303,13 @@ Selección de rol
        └── Supervisor
               │
               ▼
-       Pantalla de bienvenida
-              │
-              ▼
            Granjas
               │
               ▼
            Galpones
               │
               ▼
-     Líneas de bebederos
+      Líneas de bebederos
               │
               ▼
        Detalle de línea
@@ -213,74 +320,76 @@ Selección de rol
 
 ---
 
-## 🔥 Módulo Flushing
+## 🔥 Módulo Flushing 4.0
 
-La versión **3.0** incorpora el módulo **Flushing**, orientado a simular un proceso de limpieza térmica de las líneas de bebederos.
+El módulo de Flushing fue completamente refactorizado en esta versión.
 
-El módulo permite representar el proceso dentro del flujo de navegación de la aplicación y mantener su estado mediante un `FlushingViewModel`.
+### Componentes principales
+
+* Pantalla principal de Flushing.
+* Registro de Flushing.
+* Detalle de Flushing.
+* `FlushingViewModel`.
+* `RegistrarFlushingViewModel`.
+* `FlushingLocalDataSource`.
+* `FlushingRemoteDataSource`.
+* `FlushingRepository`.
+* `FlushingRepositoryImpl`.
+* `FlushingNavHost`.
+
+### Migración a Kotlin
+
+Una de las modificaciones principales de la versión 4.0 fue la migración del DataSource remoto:
 
 ```text
-FlushingScreen
-      │
-      ▼
-FlushingViewModel
-      │
-      ▼
-Flushing
+FlushingRemoteDataSource.java
+              │
+              ▼
+FlushingRemoteDataSource.kt
 ```
+
+Esto permite mantener el módulo de Flushing completamente integrado con el resto de la arquitectura Kotlin del proyecto.
 
 ---
 
 ## 📊 Gestión del estado
 
-La aplicación utiliza **StateFlow** para representar y observar los estados de la aplicación desde los ViewModels.
+La aplicación utiliza **StateFlow** para representar y observar estados reactivos desde los ViewModels.
 
 Ejemplo conceptual:
 
 ```text
-UI
- │
- │ observa StateFlow
- ▼
 ViewModel
- │
- │ actualiza estado
- ▼
-Repository
+    │
+    ▼
+MutableStateFlow
+    │
+    ▼
+StateFlow
+    │
+    ▼
+Jetpack Compose UI
 ```
 
-Esto permite mantener una separación clara entre:
-
-* Interfaz de usuario.
-* Estado de la aplicación.
-* Lógica de presentación.
-* Acceso a datos.
-* Modelos de dominio.
+Cada feature mantiene sus propios estados y ViewModels, permitiendo separar la lógica de presentación y reducir el acoplamiento entre pantallas.
 
 ---
 
 ## 🛠️ Instalación
 
-### 1. Clonar el repositorio
+Clonar el repositorio:
 
 ```bash
 git clone https://github.com/tuusuario/AquaControl.git
 ```
 
-### 2. Abrir el proyecto
+Luego:
 
-Abrir el proyecto en **Android Studio**.
-
-### 3. Sincronizar Gradle
-
-Esperar a que Android Studio complete la sincronización de Gradle y la descarga de las dependencias necesarias.
-
-### 4. Ejecutar
-
-Ejecutar la aplicación utilizando:
-
-* Un emulador Android.
-* Un dispositivo físico Android.
+1. Abrir el proyecto en **Android Studio**.
+2. Sincronizar **Gradle**.
+3. Esperar a que finalice la descarga de dependencias.
+4. Seleccionar un emulador o dispositivo Android.
+5. Ejecutar la aplicación.
 
 ---
 
@@ -288,32 +397,27 @@ Ejecutar la aplicación utilizando:
 
 ### Rimsky Farías Soto
 
-* UI
-* Navegación
-* Arquitectura
-* Documentación UI 3.0
+**UI · Navegación · Arquitectura · Documentación 4.0**
 
 ### Christian Quiroz Roa
 
-* Modelos
-* Repository
-* ViewModels
-* Documentación MVVM 3.0
+**Modelos · Repository · ViewModels · Documentación MVVM**
 
 ---
 
 ## 🎓 Contexto académico
 
-Proyecto desarrollado para la:
+Proyecto desarrollado para la **Evaluación Aplicada 2 (EA2)**.
 
-**Evaluación Aplicada 2 (EA2)**
-Módulo: **Desarrollo de Aplicaciones Móviles**
-Institución: **DUOC UC**
+| Campo           | Información                        |
+| --------------- | ---------------------------------- |
+| **Módulo**      | Desarrollo de Aplicaciones Móviles |
+| **Institución** | DUOC UC                            |
+| **Proyecto**    | AquaControl 4.0                    |
+| **Versión**     | 4.0                                |
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto fue desarrollado con fines **académicos** y corresponde a una evaluación de DUOC UC.
-
-No está destinado a uso comercial.
+Proyecto académico desarrollado para fines educativos y **no destinado a uso comercial**.
