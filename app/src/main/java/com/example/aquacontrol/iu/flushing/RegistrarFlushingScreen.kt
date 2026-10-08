@@ -12,10 +12,15 @@ import com.example.aquacontrol.viewmodel.flushing.RegistrarFlushingViewModel
 @Composable
 fun RegistrarFlushingScreen(
     navController: NavController,
+    lineaId: Int,
     viewModel: RegistrarFlushingViewModel = viewModel()
 ) {
     var observacion by remember { mutableStateOf("") }
     var registrado by remember { mutableStateOf(false) }
+    var temperaturaAntes by remember { mutableStateOf("") }
+    var temperaturaDespues by remember { mutableStateOf("") }
+    var duracion by remember { mutableStateOf("") }
+
 
     Column(Modifier.padding(16.dp)) {
 
@@ -34,8 +39,12 @@ fun RegistrarFlushingScreen(
 
         Button(
             onClick = {
-                viewModel.registrarFlushing(observacion)
-                registrado = true
+                viewModel.registrarFlushing(
+                    lineaId = lineaId,
+                    observacion = observacion,
+                    temperaturaAntes = temperaturaAntes.toDouble(),
+                    temperaturaDespues = temperaturaDespues.toDouble(),
+                    duracionSegundos = duracion.toInt())
             },
             modifier = Modifier.fillMaxWidth()
         ) {
