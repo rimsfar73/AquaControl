@@ -1,0 +1,11 @@
+package com.example.aquacontrol.data.flushing.local
+
+@Dao
+interface FlushingDao {
+
+    @Insert
+    suspend fun insertarFlushing(evento: FlushingEntity)
+
+    @Query("SELECT * FROM flushing WHERE lineaId = :lineaId ORDER BY fechaHora DESC")
+    suspend fun obtenerFlushingPorLinea(lineaId: Int): List<FlushingEntity>
+}
