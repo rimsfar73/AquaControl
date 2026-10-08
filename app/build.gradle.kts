@@ -1,13 +1,11 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.compose)
+    alias(aclibs.plugins.android.application)
+    alias(aclibs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "com.example.aquacontrol"
     compileSdk = 37
-
-    // Requerido por Compose 1.12.1
 
     defaultConfig {
         applicationId = "com.example.aquacontrol"
@@ -15,7 +13,6 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -37,48 +34,39 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
+        kotlinCompilerExtensionVersion = "1.5.10"
     }
 }
 
-
 dependencies {
-    // BOM de Compose (controla versiones automáticamente)
-    implementation(platform(libs.androidx.compose.bom))
-
-    // Jetpack Compose UI
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-
-    // Material 3
-    implementation(libs.androidx.compose.material3)
-
-    // Material Icons (necesario para íconos extendidos)
+    implementation(platform(aclibs.androidx.compose.bom))
+    implementation(aclibs.androidx.compose.ui)
+    implementation(aclibs.androidx.compose.ui.graphics)
+    implementation(aclibs.androidx.compose.ui.tooling.preview)
+    implementation(aclibs.androidx.compose.material3)
     implementation("androidx.compose.material:material-icons-extended")
+    implementation(aclibs.androidx.activity.compose)
+    implementation(aclibs.androidx.core.ktx)
+    implementation(aclibs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.navigation:navigation-compose:2.8.0")
 
-    // Activity Compose
-    implementation(libs.androidx.activity.compose)
 
-    // Core KTX
-    implementation(libs.androidx.core.ktx)
 
-    // Lifecycle
-    implementation(libs.androidx.lifecycle.runtime.ktx)
+    // ROOM + annotationProcessor (único modo compatible con AGP 9.3.3)
+    implementation(aclibs.room.runtime)
+    implementation(aclibs.room.ktx)
+    annotationProcessor(aclibs.room.compiler)
 
-    // Navigation Compose (última estable)
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    testImplementation(aclibs.junit)
+    androidTestImplementation(platform(aclibs.androidx.compose.bom))
+    androidTestImplementation(aclibs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(aclibs.androidx.espresso.core)
+    androidTestImplementation(aclibs.androidx.junit)
 
-    // Tests
-    testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
+    debugImplementation(aclibs.androidx.compose.ui.tooling)
+    debugImplementation(aclibs.androidx.compose.ui.test.manifest)
 
-    // Debug tools
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
 }
-
-

@@ -6,5 +6,5 @@ data class FlushingDTO(
     val observacion: String,
     val temperaturaAntes: Double,
     val temperaturaDespues: Double,
-    val duracionSegundos: Int? = null
+    val duracionSegundos: Int?
 )
