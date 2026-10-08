@@ -19,6 +19,7 @@ import com.example.aquacontrol.iu.galpones.GalponScreen
 import com.example.aquacontrol.iu.lineas.LineaScreen
 import com.example.aquacontrol.iu.detalle.DetalleLineaScreen
 import com.example.aquacontrol.iu.alertas.AlertasScreen
+import com.example.aquacontrol.iu.flushing.FlushingDetalleScreen
 import com.example.aquacontrol.iu.flushing.FlushingHomeScreen
 import com.example.aquacontrol.iu.flushing.FlushingScreen
 import com.example.aquacontrol.iu.flushing.RegistrarFlushingScreen
@@ -96,9 +97,9 @@ fun AppNavHost() {
                 FlushingHomeScreen(navController)
             }
 
-            // --- Registrar Flushing ---
-            composable(Routes.REGISTRAR_FLUSHING) {
-                RegistrarFlushingScreen(navController)
+            composable("flushingDetalle/{lineaId}") { backStack ->
+                val lineaId = backStack.arguments?.getString("lineaId")?.toIntOrNull() ?: 0
+                FlushingDetalleScreen(navController, lineaId)
             }
         }
     }

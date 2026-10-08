@@ -19,15 +19,10 @@ fun FlushingNavHost(navController: NavHostController) {
             FlushingHomeScreen(navController)
         }
 
-        // Pantalla de detalle flushing
-        composable("flushingDetalle") {
-            FlushingDetalleScreen(navController)
-        }
-
-        // Registrar flushing
-        composable(Routes.REGISTRAR_FLUSHING) {
-            RegistrarFlushingScreen(navController)
+        // Pantalla de detalle de flushing (requiere lineaId)
+        composable("flushingDetalle/{lineaId}") { backStack ->
+            val lineaId = backStack.arguments?.getString("lineaId")?.toIntOrNull() ?: 0
+            FlushingDetalleScreen(navController, lineaId)
         }
     }
 }
-
