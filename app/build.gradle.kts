@@ -1,6 +1,7 @@
 plugins {
     alias(aclibs.plugins.android.application)
     alias(aclibs.plugins.kotlin.compose)
+    alias(aclibs.plugins.ksp)
 }
 
 android {
@@ -32,10 +33,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
-    }
 }
 
 dependencies {
@@ -45,28 +42,29 @@ dependencies {
     implementation(aclibs.androidx.compose.ui.tooling.preview)
     implementation(aclibs.androidx.compose.material3)
     implementation("androidx.compose.material:material-icons-extended")
+
     implementation(aclibs.androidx.activity.compose)
     implementation(aclibs.androidx.core.ktx)
     implementation(aclibs.androidx.lifecycle.runtime.ktx)
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
-
-
-    // ROOM + annotationProcessor (único modo compatible con AGP 9.3.3)
+    // Room: persistencia local y generación de código mediante KSP
     implementation(aclibs.room.runtime)
     implementation(aclibs.room.ktx)
-    annotationProcessor(aclibs.room.compiler)
+    ksp(aclibs.room.compiler)
 
+    // Pruebas
     testImplementation(aclibs.junit)
     androidTestImplementation(platform(aclibs.androidx.compose.bom))
     androidTestImplementation(aclibs.androidx.compose.ui.test.junit4)
     androidTestImplementation(aclibs.androidx.espresso.core)
     androidTestImplementation(aclibs.androidx.junit)
 
+    // Herramientas de Compose
     debugImplementation(aclibs.androidx.compose.ui.tooling)
     debugImplementation(aclibs.androidx.compose.ui.test.manifest)
 
+    // Comunicación con API
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-
 }

@@ -8,8 +8,12 @@ import androidx.room.Query
 interface FlushingDao {
 
     @Insert
-    suspend fun insertarFlushing(evento: FlushingEntity)
+    suspend fun insertarFlushing(evento: FlushingEntity): Long
 
-    @Query("SELECT * FROM flushing WHERE lineaId = :lineaId ORDER BY fechaHora DESC")
+    @Query(
+        "SELECT * FROM flushing " +
+                "WHERE lineaId = :lineaId " +
+                "ORDER BY fechaHora DESC, id DESC"
+    )
     suspend fun obtenerFlushingPorLinea(lineaId: Int): List<FlushingEntity>
 }
