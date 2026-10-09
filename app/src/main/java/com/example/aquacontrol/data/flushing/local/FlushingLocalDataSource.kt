@@ -4,8 +4,8 @@ class FlushingLocalDataSource(
     private val dao: FlushingDao
 ) {
 
-    suspend fun guardarFlushing(entity: FlushingEntity) {
-        dao.insertarFlushing(entity)
+    suspend fun guardarFlushing(entity: FlushingEntity): Long {
+        return dao.insertarFlushing(entity)
     }
 
     suspend fun obtenerFlushingPorLinea(lineaId: Int): List<FlushingEntity> {
