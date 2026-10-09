@@ -1,95 +1,142 @@
 package com.example.aquacontrol.iu.roles
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
 import com.example.aquacontrol.iu.navigation.Routes
-import com.example.aquacontrol.ui.theme.AzulAriztia
-import com.example.aquacontrol.ui.theme.GrisClaro
-import com.example.aquacontrol.ui.theme.GrisTexto
-import com.example.aquacontrol.ui.theme.RojoAriztia
 import com.example.aquacontrol.ui.theme.AmarilloAdvertencia
+import com.example.aquacontrol.ui.theme.AzulAriztia
+import com.example.aquacontrol.ui.theme.RojoAriztia
+import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
 
 @Composable
 fun OperarioScreen(
     navController: NavController,
     perfilViewModel: PerfilViewModel
 ) {
-    val nombre = perfilViewModel.nombreUsuario.collectAsState().value
+    val nombre by perfilViewModel.nombreUsuario.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GrisClaro)
-            .padding(16.dp)
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Text("Panel Operario", color = AzulAriztia)
-        Text("Hola, $nombre", color = GrisTexto)
-
-        Text(
-            "Tu jornada comienza con el control de las líneas de agua asignadas.",
-            color = GrisTexto
-        )
-        Spacer(Modifier.height(16.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Estado de la operación", color = GrisTexto)
-                Text("2 acciones pendientes en Granja Santa Elena.", color = GrisTexto)
+            Text(
+                text = "Panel Operario",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Text(
+                text = "Hola, $nombre",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Text(
+                text = "Consulta las líneas de agua y registra los procedimientos realizados.",
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Control de la operación",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Text(
+                        text = "Revisa las temperaturas y consulta las alertas para identificar líneas que requieren atención.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
-        }
 
-        Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    navController.navigate(Routes.GRANJAS) {
+                        launchSingleTop = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AzulAriztia,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Ver Granjas")
+            }
 
-        Button(
-            onClick = { navController.navigate(Routes.GRANJAS) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = AzulAriztia)
-        ) {
-            Text("Ver Granjas", color = Color.White)
-        }
+            Button(
+                onClick = {
+                    navController.navigate(Routes.ALERTAS) {
+                        launchSingleTop = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AmarilloAdvertencia,
+                    contentColor = Color.Black
+                )
+            ) {
+                Text("Alertas")
+            }
 
-        Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    navController.navigate(Routes.FLUSHING) {
+                        launchSingleTop = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RojoAriztia,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Registrar flushin")
+            }
 
-        Button(
-            onClick = { /* Navegar a alertas cuando exista */ },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = AmarilloAdvertencia)
-        ) {
-            Text("Alertas", color = Color.Black)
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Button(
-            onClick = { navController.navigate(Routes.FLUSHING) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = RojoAriztia)
-        ) {
-            Text("Registrar Flushing", color = Color.White)
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // Botón Volver
-        Button(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = GrisTexto)
-        ) {
-            Text("Volver", color = Color.White)
+            OutlinedButton(
+                onClick = {
+                    navController.popBackStack()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Volver")
+            }
         }
     }
 }

@@ -21,18 +21,42 @@ class DetalleLineaViewModel : ViewModel() {
     fun cargarHistorial(lineaId: Int) {
         _uiState.value = DetalleLineaUiState.Loading
 
+        if (lineaId <= 0) {
+            _uiState.value = DetalleLineaUiState.Error(
+                mensaje = "No se pudo identificar la línea seleccionada."
+            )
+            return
+        }
+
         try {
-            val resultado = repository.obtenerHistorial(lineaId)
+            for (granja in repository.obtenerGranjas()) {
+                for (galpon in repository.obtenerGalpones(granja.id)) {
+                    val linea = repository.obtenerLineas(galpon.id)
+                        .firstOrNull { it.id == lineaId }
 
+                    if (linea != null) {
+                        val historial = repository
+                            .obtenerHistorial(linea.id)
+                            .sortedByDescending { it.fechaHora }
 
-            _uiState.value = if (resultado.isEmpty()) {
-                DetalleLineaUiState.Empty
-            } else {
-                DetalleLineaUiState.Success(resultado)
+                        _uiState.value = DetalleLineaUiState.Success(
+                            nombreGranja = granja.nombre,
+                            nombreGalpon = galpon.nombre,
+                            linea = linea,
+                            historial = historial
+                        )
+
+                        return
+                    }
+                }
             }
+
+            _uiState.value = DetalleLineaUiState.Error(
+                mensaje = "La línea seleccionada no fue encontrada."
+            )
         } catch (e: Exception) {
             _uiState.value = DetalleLineaUiState.Error(
-                mensaje = "No se pudo cargar el historial."
+                mensaje = "No se pudieron cargar los datos de la línea. Intenta nuevamente."
             )
         }
     }
