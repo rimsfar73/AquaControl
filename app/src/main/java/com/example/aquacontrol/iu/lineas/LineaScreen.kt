@@ -23,8 +23,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.aquacontrol.iu.components.IndicadorEstado
 import com.example.aquacontrol.iu.navigation.Routes
-import com.example.aquacontrol.model.estado.EstadoLinea
 import com.example.aquacontrol.model.temperatura.OrigenMedicion
 import com.example.aquacontrol.viewmodel.lineas.LineaUiState
 import com.example.aquacontrol.viewmodel.lineas.LineaViewModel
@@ -105,21 +105,14 @@ fun LineaScreen(
                                 val medicion = linea.ultimaMedicion
 
                                 if (medicion == null) {
-                                    Text(
-                                        text = "Sin mediciones",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
+                                    IndicadorEstado(estado = null)
 
                                     Text(
-                                        text = "Todavía no se ha guardado una temperatura para esta línea."
+                                        text = "Todavía no se ha guardado una " +
+                                                "temperatura para esta línea.",
+                                        style = MaterialTheme.typography.bodyLarge
                                     )
                                 } else {
-                                    val nombreEstado = when (medicion.estado) {
-                                        EstadoLinea.NORMAL -> "Normal"
-                                        EstadoLinea.ADVERTENCIA -> "Advertencia"
-                                        EstadoLinea.CRITICO -> "Crítico"
-                                    }
-
                                     val nombreOrigen = when (medicion.origen) {
                                         OrigenMedicion.MANUAL -> "Manual"
                                         OrigenMedicion.SIMULADA -> "Simulada"
@@ -130,13 +123,13 @@ fun LineaScreen(
                                         style = MaterialTheme.typography.headlineSmall
                                     )
 
-                                    Text(
-                                        text = "Estado: $nombreEstado",
-                                        style = MaterialTheme.typography.titleMedium
+                                    IndicadorEstado(
+                                        estado = medicion.estado
                                     )
 
                                     Text(
-                                        text = "Origen: $nombreOrigen"
+                                        text = "Origen: $nombreOrigen",
+                                        style = MaterialTheme.typography.bodyLarge
                                     )
 
                                     Text(

@@ -8,13 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -23,18 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.aquacontrol.iu.components.IndicadorEstado
 import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.model.estado.EstadoLinea
-import com.example.aquacontrol.model.temperatura.OrigenMedicion
 import com.example.aquacontrol.viewmodel.alertas.AlertaLinea
 import com.example.aquacontrol.viewmodel.alertas.AlertasUiState
 import com.example.aquacontrol.viewmodel.alertas.AlertasViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun AlertasScreen(
@@ -54,15 +46,8 @@ fun AlertasScreen(
         ) {
             item {
                 Text(
-                    text = "Alertas de temperatura",
+                    text = "Alertas",
                     style = MaterialTheme.typography.headlineSmall
-                )
-            }
-
-            item {
-                Text(
-                    text = "Estado según la última medición guardada de cada línea.",
-                    style = MaterialTheme.typography.bodyLarge
                 )
             }
 
@@ -85,57 +70,41 @@ fun AlertasScreen(
                     val lineasConMediciones =
                         actual.totalLineas - actual.lineasSinMediciones
 
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Críticas: $criticas · Advertencias: $advertencias",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-
-                                Text(
-                                    text = "Líneas con mediciones: " +
-                                            "$lineasConMediciones de ${actual.totalLineas}"
-                                )
-
-                                Text(
-                                    text = "Sin mediciones: ${actual.lineasSinMediciones}"
-                                )
-                            }
-                        }
-                    }
-
-                    if (actual.lineasSinMediciones > 0) {
+                    if (actual.alertas.isNotEmpty()) {
                         item {
                             Text(
-                                text = "Las líneas sin mediciones no tienen un estado térmico evaluado.",
-                                style = MaterialTheme.typography.bodyMedium
+                                text = "$criticas críticas · $advertencias advertencias",
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
-                    }
-
-                    if (actual.alertas.isEmpty()) {
+                    } else {
                         item {
                             val mensaje = when {
                                 actual.totalLineas == 0 ->
                                     "No hay líneas registradas."
 
                                 lineasConMediciones == 0 ->
-                                    "Todavía no hay mediciones para evaluar alertas."
+                                    "Sin mediciones disponibles."
 
                                 else ->
-                                    "No hay advertencias ni alertas críticas " +
-                                            "en las últimas mediciones disponibles."
+                                    "Sin alertas en las líneas con mediciones."
                             }
 
                             Text(
                                 text = mensaje,
                                 style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+
+                    if (
+                        actual.lineasSinMediciones > 0 &&
+                        lineasConMediciones > 0
+                    ) {
+                        item {
+                            Text(
+                                text = "Líneas sin mediciones: ${actual.lineasSinMediciones}",
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
@@ -146,7 +115,7 @@ fun AlertasScreen(
                     ) { alerta ->
                         TarjetaAlerta(
                             alerta = alerta,
-                            onVerLinea = {
+                            onVerDetalle = {
                                 navController.navigate(
                                     "${Routes.DETALLE_LINEA}/${alerta.medicion.lineaId}"
                                 ) {
@@ -177,14 +146,6 @@ fun AlertasScreen(
             }
 
             item {
-                Text(
-                    text = "La lista se actualiza al guardar nuevas mediciones. " +
-                            "Las lecturas simuladas se identifican en cada tarjeta.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            item {
                 OutlinedButton(
                     onClick = {
                         navController.popBackStack()
@@ -201,109 +162,48 @@ fun AlertasScreen(
 @Composable
 private fun TarjetaAlerta(
     alerta: AlertaLinea,
-    onVerLinea: () -> Unit
+    onVerDetalle: () -> Unit
 ) {
-    val medicion = alerta.medicion
-    val esCritica = medicion.estado == EstadoLinea.CRITICO
-
-    val colorFondo = if (esCritica) {
-        MaterialTheme.colorScheme.errorContainer
-    } else {
-        Color(0xFFFFF3CD)
-    }
-
-    val colorContenido = if (esCritica) {
-        MaterialTheme.colorScheme.onErrorContainer
-    } else {
-        Color(0xFF4D3800)
-    }
-
-    val titulo = when (medicion.estado) {
-        EstadoLinea.CRITICO -> "ALERTA CRÍTICA"
-        EstadoLinea.ADVERTENCIA -> "ADVERTENCIA"
-        EstadoLinea.NORMAL -> "NORMAL"
-    }
-
-    val origen = when (medicion.origen) {
-        OrigenMedicion.MANUAL -> "Manual"
-        OrigenMedicion.SIMULADA -> "Simulada"
-    }
-
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = colorFondo,
-            contentColor = colorContenido
-        )
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null
+            IndicadorEstado(
+                estado = alerta.medicion.estado,
+                destacado = true
             )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "${alerta.nombreGranja} · ${alerta.nombreGalpon}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text(
+                    text = alerta.nombreLinea,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
 
             Text(
-                text = titulo,
-                style = MaterialTheme.typography.titleLarge
+                text = "${alerta.medicion.temperatura} °C",
+                style = MaterialTheme.typography.headlineSmall
             )
 
-            Text(
-                text = "${alerta.nombreGranja} · ${alerta.nombreGalpon}",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Text(
-                text = alerta.nombreLinea,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Text(
-                text = "Temperatura: ${medicion.temperatura} °C",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            Text(
-                text = "Origen: $origen"
-            )
-
-            Text(
-                text = "Última medición: ${
-                    formatearFechaAlerta(medicion.fechaHora)
-                }",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Text(
-                text = when {
-                    medicion.origen == OrigenMedicion.SIMULADA ->
-                        "Alerta generada por una simulación; no corresponde a un sensor real."
-
-                    esCritica ->
-                        "Revisa esta línea con prioridad y verifica la medición."
-
-                    else ->
-                        "Revisa la temperatura y las condiciones de esta línea."
-                }
-            )
-
-            Button(
-                onClick = onVerLinea,
+            OutlinedButton(
+                onClick = onVerDetalle,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Ver línea")
+                Text(
+                    text = "Ver detalle",
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
         }
     }
-}
-
-private fun formatearFechaAlerta(fechaHora: Long): String {
-    val formato = SimpleDateFormat(
-        "dd/MM/yyyy HH:mm:ss",
-        Locale.getDefault()
-    )
-
-    return formato.format(Date(fechaHora))
 }

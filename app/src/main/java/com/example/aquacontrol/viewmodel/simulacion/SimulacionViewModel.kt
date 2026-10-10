@@ -3,6 +3,7 @@ package com.example.aquacontrol.viewmodel.simulacion
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aquacontrol.data.simulacion.GeneradorTemperatura
+import com.example.aquacontrol.model.simulacion.EscenarioSimulacion
 import com.example.aquacontrol.model.temperatura.OrigenMedicion
 import com.example.aquacontrol.repository.bebedero.BebederoRepository
 import com.example.aquacontrol.repository.temperatura.TemperaturaRepository
@@ -29,41 +30,123 @@ class SimulacionViewModel(
 
     private var trabajoSimulacion: Job? = null
 
-    fun iniciar() {
-        // Evita iniciar dos simulaciones o reiniciar mientras
-        // la ejecución anterior todavía se está deteniendo.
-        if (trabajoSimulacion?.isCompleted == false) return
+    init {
+        cargarLineas()
+    }
 
-        val lineasIds = try {
-            bebederoRepository.obtenerGranjas()
-                .flatMap { granja ->
-                    bebederoRepository.obtenerGalpones(granja.id)
+    private fun cargarLineas(): Boolean {
+        return try {
+            val lineas = mutableListOf<LineaSimulacion>()
+
+            for (granja in bebederoRepository.obtenerGranjas()) {
+                for (galpon in bebederoRepository.obtenerGalpones(granja.id)) {
+                    for (linea in bebederoRepository.obtenerLineas(galpon.id)) {
+                        lineas.add(
+                            LineaSimulacion(
+                                id = linea.id,
+                                nombreGranja = granja.nombre,
+                                nombreGalpon = galpon.nombre,
+                                nombreLinea = linea.nombre
+                            )
+                        )
+                    }
                 }
-                .flatMap { galpon ->
-                    bebederoRepository.obtenerLineas(galpon.id)
+            }
+
+            val lineasDisponibles = lineas.distinctBy { it.id }
+            val seleccionAnterior = _uiState.value.lineaSeleccionadaId
+
+            val seleccionValida = seleccionAnterior?.takeIf { id ->
+                lineasDisponibles.any { it.id == id }
+            }
+
+            _uiState.value = _uiState.value.copy(
+                lineas = lineasDisponibles,
+                lineaSeleccionadaId = seleccionValida,
+                error = if (lineasDisponibles.isEmpty()) {
+                    "No hay líneas disponibles para iniciar la simulación."
+                } else {
+                    null
                 }
-                .map { linea -> linea.id }
-                .distinct()
+            )
+
+            lineasDisponibles.isNotEmpty()
         } catch (e: Exception) {
             _uiState.value = _uiState.value.copy(
-                activa = false,
+                lineas = emptyList(),
+                lineaSeleccionadaId = null,
                 error = "No se pudieron cargar las líneas para simular."
             )
-            return
+
+            false
+        }
+    }
+
+    fun seleccionarLinea(lineaId: Int) {
+        if (_uiState.value.lineas.none { it.id == lineaId }) return
+
+        _uiState.value = _uiState.value.copy(
+            lineaSeleccionadaId = lineaId,
+            mensajeEscenario = null
+        )
+    }
+
+    fun seleccionarEscenario(escenario: EscenarioSimulacion) {
+        _uiState.value = _uiState.value.copy(
+            escenarioSeleccionado = escenario,
+            mensajeEscenario = null
+        )
+    }
+
+    fun aplicarEscenario() {
+        val actual = _uiState.value
+
+        if (!actual.puedeAplicarEscenario) return
+        if (trabajoSimulacion?.isActive != true) return
+
+        val linea = actual.lineas.firstOrNull {
+            it.id == actual.lineaSeleccionadaId
+        } ?: return
+
+        generador.seleccionarEscenario(
+            lineaId = linea.id,
+            escenario = actual.escenarioSeleccionado
+        )
+
+        val nombreEscenario = when (actual.escenarioSeleccionado) {
+            EscenarioSimulacion.ESTABILIDAD -> "Estabilidad"
+            EscenarioSimulacion.CALENTAMIENTO -> "Calentamiento"
+            EscenarioSimulacion.ENFRIAMIENTO -> "Enfriamiento"
+            EscenarioSimulacion.CRITICO_CALOR -> "Crítico por calor"
+            EscenarioSimulacion.CRITICO_FRIO -> "Crítico por frío"
+            EscenarioSimulacion.RECUPERACION -> "Recuperación"
         }
 
-        if (lineasIds.isEmpty()) {
-            _uiState.value = _uiState.value.copy(
-                activa = false,
-                error = "No hay líneas disponibles para iniciar la simulación."
-            )
-            return
-        }
+        _uiState.value = _uiState.value.copy(
+            mensajeEscenario =
+                "Escenario solicitado: $nombreEscenario. " +
+                        "${linea.nombreGranja} · ${linea.nombreGalpon} · " +
+                        "${linea.nombreLinea}. La temperatura cambiará " +
+                        "gradualmente en las próximas lecturas."
+        )
+    }
+
+    fun iniciar() {
+        // Espera a que termine cualquier ejecución anterior.
+        if (trabajoSimulacion?.isCompleted == false) return
+
+        if (!cargarLineas()) return
+
+        val lineasIds = _uiState.value.lineas.map { it.id }
 
         generador.reiniciar()
 
-        _uiState.value = SimulacionUiState(
-            activa = true
+        _uiState.value = _uiState.value.copy(
+            activa = true,
+            medicionesGeneradas = 0,
+            ultimaActualizacion = null,
+            error = null,
+            mensajeEscenario = null
         )
 
         val nuevoTrabajo = viewModelScope.launch(
@@ -102,7 +185,8 @@ class SimulacionViewModel(
                 )
             } finally {
                 _uiState.value = _uiState.value.copy(
-                    activa = false
+                    activa = false,
+                    mensajeEscenario = null
                 )
             }
         }
@@ -115,7 +199,8 @@ class SimulacionViewModel(
         trabajoSimulacion?.cancel()
 
         _uiState.value = _uiState.value.copy(
-            activa = false
+            activa = false,
+            mensajeEscenario = null
         )
     }
 
