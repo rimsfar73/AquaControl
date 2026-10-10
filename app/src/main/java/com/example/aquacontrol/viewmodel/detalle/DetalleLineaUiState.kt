@@ -1,7 +1,7 @@
 package com.example.aquacontrol.viewmodel.detalle
 
-import com.example.aquacontrol.model.historial.HistorialTemperatura
-import com.example.aquacontrol.model.linea.LineaBebedero
+import com.example.aquacontrol.model.linea.LineaMonitoreada
+import com.example.aquacontrol.model.temperatura.MedicionTemperatura
 
 sealed class DetalleLineaUiState {
 
@@ -10,8 +10,8 @@ sealed class DetalleLineaUiState {
     data class Success(
         val nombreGranja: String,
         val nombreGalpon: String,
-        val linea: LineaBebedero,
-        val historial: List<HistorialTemperatura>
+        val linea: LineaMonitoreada,
+        val historial: List<MedicionTemperatura>
     ) : DetalleLineaUiState()
 
     data class Error(

@@ -21,20 +21,23 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.model.estado.EstadoLinea
+import com.example.aquacontrol.model.temperatura.OrigenMedicion
 import com.example.aquacontrol.viewmodel.detalle.DetalleLineaUiState
 import com.example.aquacontrol.viewmodel.detalle.DetalleLineaViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun DetalleLineaScreen(
     navController: NavController,
     lineaId: Int,
-    viewModel: DetalleLineaViewModel = viewModel()
+    viewModel: DetalleLineaViewModel
 ) {
-    LaunchedEffect(lineaId) {
+    LaunchedEffect(lineaId, viewModel) {
         viewModel.cargarHistorial(lineaId)
     }
 
@@ -89,29 +92,46 @@ fun DetalleLineaScreen(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    text = "Última temperatura registrada",
+                                    text = "Última medición",
                                     style = MaterialTheme.typography.titleMedium
                                 )
 
-                                Text(
-                                    text = "${actual.linea.temperatura} °C",
-                                    style = MaterialTheme.typography.headlineMedium
-                                )
+                                val medicion = actual.linea.ultimaMedicion
 
-                                val nombreEstado = when (actual.linea.estado) {
-                                    EstadoLinea.NORMAL -> "Normal"
-                                    EstadoLinea.ADVERTENCIA -> "Advertencia"
-                                    EstadoLinea.CRITICO -> "Crítico"
+                                if (medicion == null) {
+                                    Text(
+                                        text = "Sin mediciones",
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+
+                                    Text(
+                                        text = "Todavía no se ha guardado una temperatura para esta línea."
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${medicion.temperatura} °C",
+                                        style = MaterialTheme.typography.headlineMedium
+                                    )
+
+                                    Text(
+                                        text = "Estado: ${
+                                            nombreEstadoDetalle(medicion.estado)
+                                        }"
+                                    )
+
+                                    Text(
+                                        text = "Origen: ${
+                                            nombreOrigenDetalle(medicion.origen)
+                                        }"
+                                    )
+
+                                    Text(
+                                        text = "Fecha y hora: ${
+                                            formatearFechaDetalle(medicion.fechaHora)
+                                        }",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                 }
-
-                                Text(
-                                    text = "Estado: $nombreEstado"
-                                )
-
-                                Text(
-                                    text = "Actualizado: ${actual.linea.actualizado}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
                             }
                         }
                     }
@@ -138,10 +158,17 @@ fun DetalleLineaScreen(
                         )
                     }
 
+                    item {
+                        Text(
+                            text = "Mediciones guardadas: ${actual.historial.size}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
                     if (actual.historial.isEmpty()) {
                         item {
                             Text(
-                                text = "Esta línea no tiene mediciones históricas registradas."
+                                text = "Esta línea todavía no tiene mediciones históricas registradas."
                             )
                         }
                     } else {
@@ -158,11 +185,25 @@ fun DetalleLineaScreen(
                                 ) {
                                     Text(
                                         text = "${registro.temperatura} °C",
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography.titleLarge
                                     )
 
                                     Text(
-                                        text = "Fecha y hora: ${registro.fechaHora}",
+                                        text = "Estado: ${
+                                            nombreEstadoDetalle(registro.estado)
+                                        }"
+                                    )
+
+                                    Text(
+                                        text = "Origen: ${
+                                            nombreOrigenDetalle(registro.origen)
+                                        }"
+                                    )
+
+                                    Text(
+                                        text = "Fecha y hora: ${
+                                            formatearFechaDetalle(registro.fechaHora)
+                                        }",
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
@@ -211,4 +252,28 @@ fun DetalleLineaScreen(
             }
         }
     }
+}
+
+private fun nombreEstadoDetalle(estado: EstadoLinea): String {
+    return when (estado) {
+        EstadoLinea.NORMAL -> "Normal"
+        EstadoLinea.ADVERTENCIA -> "Advertencia"
+        EstadoLinea.CRITICO -> "Crítico"
+    }
+}
+
+private fun nombreOrigenDetalle(origen: OrigenMedicion): String {
+    return when (origen) {
+        OrigenMedicion.MANUAL -> "Manual"
+        OrigenMedicion.SIMULADA -> "Simulada"
+    }
+}
+
+private fun formatearFechaDetalle(fechaHora: Long): String {
+    val formato = SimpleDateFormat(
+        "dd/MM/yyyy HH:mm:ss",
+        Locale.getDefault()
+    )
+
+    return formato.format(Date(fechaHora))
 }
