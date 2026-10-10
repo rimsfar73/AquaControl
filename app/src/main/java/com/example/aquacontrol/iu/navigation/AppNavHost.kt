@@ -38,6 +38,7 @@ import com.example.aquacontrol.iu.roles.OperarioScreen
 import com.example.aquacontrol.iu.roles.RolSelectionScreen
 import com.example.aquacontrol.iu.roles.SupervisorScreen
 import com.example.aquacontrol.iu.simulacion.SimulacionScreen
+import com.example.aquacontrol.iu.temperatura.RegistrarTemperaturaScreen
 import com.example.aquacontrol.notificaciones.NotificadorAlertas
 import com.example.aquacontrol.repository.flushing.FlushingRepositoryImpl
 import com.example.aquacontrol.repository.temperatura.TemperaturaRepositoryImpl
@@ -48,6 +49,7 @@ import com.example.aquacontrol.viewmodel.flushing.RegistrarFlushingViewModel
 import com.example.aquacontrol.viewmodel.lineas.LineaViewModel
 import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
 import com.example.aquacontrol.viewmodel.simulacion.SimulacionViewModel
+import com.example.aquacontrol.viewmodel.temperatura.RegistrarTemperaturaViewModel
 
 private const val DETALLE_ALERTA = "detalleAlerta"
 private const val DETALLE_ALERTA_PARAM =
@@ -101,6 +103,14 @@ fun AppNavHost(
         viewModelFactory {
             initializer {
                 RegistrarFlushingViewModel(flushingRepository)
+            }
+        }
+    }
+
+    val registroTemperaturaFactory = remember(temperaturaRepository) {
+        viewModelFactory {
+            initializer {
+                RegistrarTemperaturaViewModel(temperaturaRepository)
             }
         }
     }
@@ -239,6 +249,37 @@ fun AppNavHost(
                     lineaId = lineaId,
                     viewModel = detalleViewModel
                 )
+            }
+
+            // Formulario de registro manual de temperatura
+            composable(
+                route = Routes.REGISTRAR_TEMPERATURA_PARAM,
+                arguments = listOf(
+                    navArgument("lineaId") {
+                        type = NavType.IntType
+                    }
+                )
+            ) { backStack ->
+                val lineaId = backStack.arguments
+                    ?.getInt("lineaId") ?: 0
+
+                if (lineaId <= 0) {
+                    Text(
+                        "No se pudo identificar la línea. Vuelve y selecciónala."
+                    )
+                } else {
+                    val registroTemperaturaViewModel:
+                            RegistrarTemperaturaViewModel = viewModel(
+                        viewModelStoreOwner = backStack,
+                        factory = registroTemperaturaFactory
+                    )
+
+                    RegistrarTemperaturaScreen(
+                        navController = navController,
+                        lineaId = lineaId,
+                        viewModel = registroTemperaturaViewModel
+                    )
+                }
             }
 
             // Medición específica que originó una notificación

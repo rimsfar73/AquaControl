@@ -22,6 +22,11 @@ object Routes {
     const val DETALLE_LINEA = "detalleLinea"
     const val DETALLE_LINEA_PARAM = "detalleLinea/{lineaId}"
 
+    // Registro manual de temperaturas
+    const val REGISTRAR_TEMPERATURA = "registrarTemperatura"
+    const val REGISTRAR_TEMPERATURA_PARAM =
+        "$REGISTRAR_TEMPERATURA/{lineaId}"
+
     // Alertas
     const val ALERTAS = "alertas"
 
