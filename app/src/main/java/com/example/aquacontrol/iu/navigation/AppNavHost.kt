@@ -5,6 +5,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +24,7 @@ import com.example.aquacontrol.data.AppDatabase
 import com.example.aquacontrol.data.flushing.local.FlushingLocalDataSource
 import com.example.aquacontrol.data.temperatura.local.TemperaturaLocalDataSource
 import com.example.aquacontrol.iu.alertas.AlertasScreen
+import com.example.aquacontrol.iu.alertas.DetalleAlertaScreen
 import com.example.aquacontrol.iu.components.BottomBar
 import com.example.aquacontrol.iu.detalle.DetalleLineaScreen
 import com.example.aquacontrol.iu.flushing.FlushingDetalleScreen
@@ -36,6 +38,7 @@ import com.example.aquacontrol.iu.roles.OperarioScreen
 import com.example.aquacontrol.iu.roles.RolSelectionScreen
 import com.example.aquacontrol.iu.roles.SupervisorScreen
 import com.example.aquacontrol.iu.simulacion.SimulacionScreen
+import com.example.aquacontrol.notificaciones.NotificadorAlertas
 import com.example.aquacontrol.repository.flushing.FlushingRepositoryImpl
 import com.example.aquacontrol.repository.temperatura.TemperaturaRepositoryImpl
 import com.example.aquacontrol.viewmodel.alertas.AlertasViewModel
@@ -46,13 +49,19 @@ import com.example.aquacontrol.viewmodel.lineas.LineaViewModel
 import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
 import com.example.aquacontrol.viewmodel.simulacion.SimulacionViewModel
 
+private const val DETALLE_ALERTA = "detalleAlerta"
+private const val DETALLE_ALERTA_PARAM =
+    "$DETALLE_ALERTA/{lineaId}/{medicionId}"
+
 @Composable
-fun AppNavHost() {
+fun AppNavHost(
+    lineaIdNotificacion: Int? = null,
+    medicionIdNotificacion: Long? = null,
+    onNotificacionAbierta: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val perfilViewModel: PerfilViewModel = viewModel()
     val appContext = LocalContext.current.applicationContext
-
-    // Ciclo de vida de la actividad, fuera de las pantallas del NavHost.
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val database = remember(appContext) {
@@ -65,11 +74,18 @@ fun AppNavHost() {
         )
     }
 
-    val temperaturaRepository = remember(database) {
+    val notificadorAlertas = remember(appContext) {
+        NotificadorAlertas(appContext).also {
+            it.crearCanales()
+        }
+    }
+
+    val temperaturaRepository = remember(database, notificadorAlertas) {
         TemperaturaRepositoryImpl(
-            TemperaturaLocalDataSource(
+            localDataSource = TemperaturaLocalDataSource(
                 database.medicionTemperaturaDao()
-            )
+            ),
+            notificadorAlertas = notificadorAlertas
         )
     }
 
@@ -225,6 +241,42 @@ fun AppNavHost() {
                 )
             }
 
+            // Medición específica que originó una notificación
+            composable(
+                route = DETALLE_ALERTA_PARAM,
+                arguments = listOf(
+                    navArgument("lineaId") {
+                        type = NavType.IntType
+                    },
+                    navArgument("medicionId") {
+                        type = NavType.LongType
+                    }
+                )
+            ) { backStack ->
+                val lineaId = backStack.arguments
+                    ?.getInt("lineaId") ?: 0
+
+                val medicionId = backStack.arguments
+                    ?.getLong("medicionId") ?: 0L
+
+                if (lineaId <= 0 || medicionId <= 0L) {
+                    Text("No se pudo identificar la alerta.")
+                } else {
+                    val detalleAlertaViewModel: DetalleLineaViewModel =
+                        viewModel(
+                            viewModelStoreOwner = backStack,
+                            factory = detalleFactory
+                        )
+
+                    DetalleAlertaScreen(
+                        navController = navController,
+                        lineaId = lineaId,
+                        medicionId = medicionId,
+                        viewModel = detalleAlertaViewModel
+                    )
+                }
+            }
+
             // Historial de flushing por línea
             composable(
                 route = Routes.FLUSHING_PARAM,
@@ -320,6 +372,29 @@ fun AppNavHost() {
                     viewModel = simulacionViewModel
                 )
             }
+        }
+    }
+
+    LaunchedEffect(
+        lineaIdNotificacion,
+        medicionIdNotificacion
+    ) {
+        val lineaId = lineaIdNotificacion
+        val medicionId = medicionIdNotificacion
+
+        if (
+            lineaId != null &&
+            medicionId != null &&
+            lineaId > 0 &&
+            medicionId > 0L
+        ) {
+            navController.navigate(
+                "$DETALLE_ALERTA/$lineaId/$medicionId"
+            ) {
+                launchSingleTop = true
+            }
+
+            onNotificacionAbierta()
         }
     }
 }
