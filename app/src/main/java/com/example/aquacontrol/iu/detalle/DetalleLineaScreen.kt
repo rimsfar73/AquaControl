@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -131,6 +132,26 @@ fun DetalleLineaScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+
+                    item {
+                        Button(
+                            onClick = {
+                                navController.navigate(
+                                    "${Routes.REGISTRAR_TEMPERATURA}/${actual.linea.id}"
+                                ) {
+                                    launchSingleTop = true
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                        ) {
+                            Text(
+                                text = "Registrar temperatura",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     }
 
