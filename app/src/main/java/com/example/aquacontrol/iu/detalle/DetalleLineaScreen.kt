@@ -22,8 +22,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.aquacontrol.iu.components.IndicadorEstado
 import com.example.aquacontrol.iu.navigation.Routes
-import com.example.aquacontrol.model.estado.EstadoLinea
 import com.example.aquacontrol.model.temperatura.OrigenMedicion
 import com.example.aquacontrol.viewmodel.detalle.DetalleLineaUiState
 import com.example.aquacontrol.viewmodel.detalle.DetalleLineaViewModel
@@ -99,13 +99,12 @@ fun DetalleLineaScreen(
                                 val medicion = actual.linea.ultimaMedicion
 
                                 if (medicion == null) {
-                                    Text(
-                                        text = "Sin mediciones",
-                                        style = MaterialTheme.typography.titleLarge
-                                    )
+                                    IndicadorEstado(estado = null)
 
                                     Text(
-                                        text = "Todavía no se ha guardado una temperatura para esta línea."
+                                        text = "Todavía no se ha guardado una " +
+                                                "temperatura para esta línea.",
+                                        style = MaterialTheme.typography.bodyLarge
                                     )
                                 } else {
                                     Text(
@@ -113,16 +112,15 @@ fun DetalleLineaScreen(
                                         style = MaterialTheme.typography.headlineMedium
                                     )
 
-                                    Text(
-                                        text = "Estado: ${
-                                            nombreEstadoDetalle(medicion.estado)
-                                        }"
+                                    IndicadorEstado(
+                                        estado = medicion.estado
                                     )
 
                                     Text(
                                         text = "Origen: ${
                                             nombreOrigenDetalle(medicion.origen)
-                                        }"
+                                        }",
+                                        style = MaterialTheme.typography.bodyLarge
                                     )
 
                                     Text(
@@ -147,7 +145,7 @@ fun DetalleLineaScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Ver historial de flushin")
+                            Text("Ver historial de flushing")
                         }
                     }
 
@@ -168,7 +166,8 @@ fun DetalleLineaScreen(
                     if (actual.historial.isEmpty()) {
                         item {
                             Text(
-                                text = "Esta línea todavía no tiene mediciones históricas registradas."
+                                text = "Esta línea todavía no tiene " +
+                                        "mediciones históricas registradas."
                             )
                         }
                     } else {
@@ -188,16 +187,15 @@ fun DetalleLineaScreen(
                                         style = MaterialTheme.typography.titleLarge
                                     )
 
-                                    Text(
-                                        text = "Estado: ${
-                                            nombreEstadoDetalle(registro.estado)
-                                        }"
+                                    IndicadorEstado(
+                                        estado = registro.estado
                                     )
 
                                     Text(
                                         text = "Origen: ${
                                             nombreOrigenDetalle(registro.origen)
-                                        }"
+                                        }",
+                                        style = MaterialTheme.typography.bodyLarge
                                     )
 
                                     Text(
@@ -251,14 +249,6 @@ fun DetalleLineaScreen(
                 }
             }
         }
-    }
-}
-
-private fun nombreEstadoDetalle(estado: EstadoLinea): String {
-    return when (estado) {
-        EstadoLinea.NORMAL -> "Normal"
-        EstadoLinea.ADVERTENCIA -> "Advertencia"
-        EstadoLinea.CRITICO -> "Crítico"
     }
 }
 
