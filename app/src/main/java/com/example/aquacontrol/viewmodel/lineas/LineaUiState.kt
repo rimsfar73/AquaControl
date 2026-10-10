@@ -1,13 +1,13 @@
 package com.example.aquacontrol.viewmodel.lineas
 
-import com.example.aquacontrol.model.linea.LineaBebedero
+import com.example.aquacontrol.model.linea.LineaMonitoreada
 
 sealed class LineaUiState {
 
     object Loading : LineaUiState()
 
     data class Success(
-        val lineas: List<LineaBebedero>
+        val lineas: List<LineaMonitoreada>
     ) : LineaUiState()
 
     object Empty : LineaUiState()

@@ -29,4 +29,7 @@ object Routes {
     const val FLUSHING = "flushing"
     const val FLUSHING_PARAM = "flushing/{lineaId}"
     const val REGISTRAR_FLUSHING = "registrarFlushing"
+
+    // Simulación de temperaturas
+    const val SIMULACION = "simulacion"
 }

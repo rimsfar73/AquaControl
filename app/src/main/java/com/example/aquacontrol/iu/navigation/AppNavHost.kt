@@ -4,9 +4,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -17,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.aquacontrol.data.AppDatabase
 import com.example.aquacontrol.data.flushing.local.FlushingLocalDataSource
+import com.example.aquacontrol.data.temperatura.local.TemperaturaLocalDataSource
 import com.example.aquacontrol.iu.alertas.AlertasScreen
 import com.example.aquacontrol.iu.components.BottomBar
 import com.example.aquacontrol.iu.detalle.DetalleLineaScreen
@@ -30,10 +35,16 @@ import com.example.aquacontrol.iu.lineas.LineaScreen
 import com.example.aquacontrol.iu.roles.OperarioScreen
 import com.example.aquacontrol.iu.roles.RolSelectionScreen
 import com.example.aquacontrol.iu.roles.SupervisorScreen
+import com.example.aquacontrol.iu.simulacion.SimulacionScreen
 import com.example.aquacontrol.repository.flushing.FlushingRepositoryImpl
+import com.example.aquacontrol.repository.temperatura.TemperaturaRepositoryImpl
+import com.example.aquacontrol.viewmodel.alertas.AlertasViewModel
+import com.example.aquacontrol.viewmodel.detalle.DetalleLineaViewModel
 import com.example.aquacontrol.viewmodel.flushing.FlushingViewModel
 import com.example.aquacontrol.viewmodel.flushing.RegistrarFlushingViewModel
+import com.example.aquacontrol.viewmodel.lineas.LineaViewModel
 import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
+import com.example.aquacontrol.viewmodel.simulacion.SimulacionViewModel
 
 @Composable
 fun AppNavHost() {
@@ -41,15 +52,25 @@ fun AppNavHost() {
     val perfilViewModel: PerfilViewModel = viewModel()
     val appContext = LocalContext.current.applicationContext
 
-    // El formulario y el historial utilizan la misma base de datos.
-    val flushingRepository = remember(appContext) {
-        val database = AppDatabase.getInstance(appContext)
+    // Ciclo de vida de la actividad, fuera de las pantallas del NavHost.
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-        val localDataSource = FlushingLocalDataSource(
-            database.flushingDao()
+    val database = remember(appContext) {
+        AppDatabase.getInstance(appContext)
+    }
+
+    val flushingRepository = remember(database) {
+        FlushingRepositoryImpl(
+            FlushingLocalDataSource(database.flushingDao())
         )
+    }
 
-        FlushingRepositoryImpl(localDataSource)
+    val temperaturaRepository = remember(database) {
+        TemperaturaRepositoryImpl(
+            TemperaturaLocalDataSource(
+                database.medicionTemperaturaDao()
+            )
+        )
     }
 
     val historialFactory = remember(flushingRepository) {
@@ -65,6 +86,58 @@ fun AppNavHost() {
             initializer {
                 RegistrarFlushingViewModel(flushingRepository)
             }
+        }
+    }
+
+    val lineasFactory = remember(temperaturaRepository) {
+        viewModelFactory {
+            initializer {
+                LineaViewModel(temperaturaRepository)
+            }
+        }
+    }
+
+    val detalleFactory = remember(temperaturaRepository) {
+        viewModelFactory {
+            initializer {
+                DetalleLineaViewModel(temperaturaRepository)
+            }
+        }
+    }
+
+    val alertasFactory = remember(temperaturaRepository) {
+        viewModelFactory {
+            initializer {
+                AlertasViewModel(temperaturaRepository)
+            }
+        }
+    }
+
+    val simulacionFactory = remember(temperaturaRepository) {
+        viewModelFactory {
+            initializer {
+                SimulacionViewModel(temperaturaRepository)
+            }
+        }
+    }
+
+    // Una sola instancia de simulación para toda la actividad.
+    val simulacionViewModel: SimulacionViewModel = viewModel(
+        factory = simulacionFactory
+    )
+
+    DisposableEffect(lifecycleOwner, simulacionViewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                simulacionViewModel.detener()
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            simulacionViewModel.detener()
         }
     }
 
@@ -104,25 +177,55 @@ fun AppNavHost() {
                 GalponScreen(navController, granjaId)
             }
 
-            // Líneas del galpón seleccionado
-            composable(Routes.LINEAS_PARAM) { backStack ->
+            // Líneas con sus últimas mediciones de Room
+            composable(
+                route = Routes.LINEAS_PARAM,
+                arguments = listOf(
+                    navArgument("galponId") {
+                        type = NavType.IntType
+                    }
+                )
+            ) { backStack ->
                 val galponId = backStack.arguments
-                    ?.getString("galponId")
-                    ?.toIntOrNull() ?: 0
+                    ?.getInt("galponId") ?: 0
 
-                LineaScreen(navController, galponId)
+                val lineasViewModel: LineaViewModel = viewModel(
+                    viewModelStoreOwner = backStack,
+                    factory = lineasFactory
+                )
+
+                LineaScreen(
+                    navController = navController,
+                    galponId = galponId,
+                    viewModel = lineasViewModel
+                )
             }
 
-            // Detalle de la línea seleccionada
-            composable(Routes.DETALLE_LINEA_PARAM) { backStack ->
+            // Detalle e historial térmico desde Room
+            composable(
+                route = Routes.DETALLE_LINEA_PARAM,
+                arguments = listOf(
+                    navArgument("lineaId") {
+                        type = NavType.IntType
+                    }
+                )
+            ) { backStack ->
                 val lineaId = backStack.arguments
-                    ?.getString("lineaId")
-                    ?.toIntOrNull() ?: 0
+                    ?.getInt("lineaId") ?: 0
 
-                DetalleLineaScreen(navController, lineaId)
+                val detalleViewModel: DetalleLineaViewModel = viewModel(
+                    viewModelStoreOwner = backStack,
+                    factory = detalleFactory
+                )
+
+                DetalleLineaScreen(
+                    navController = navController,
+                    lineaId = lineaId,
+                    viewModel = detalleViewModel
+                )
             }
 
-            // Historial real de flushing por línea
+            // Historial de flushing por línea
             composable(
                 route = Routes.FLUSHING_PARAM,
                 arguments = listOf(
@@ -152,7 +255,7 @@ fun AppNavHost() {
                 }
             }
 
-            // Formulario de registro para una línea seleccionada
+            // Formulario de registro de flushing
             composable(
                 route = "${Routes.REGISTRAR_FLUSHING}/{lineaId}",
                 arguments = listOf(
@@ -183,12 +286,20 @@ fun AppNavHost() {
                 }
             }
 
-            // Alertas
-            composable(Routes.ALERTAS) {
-                AlertasScreen(navController)
+            // Alertas calculadas con las últimas mediciones de Room
+            composable(Routes.ALERTAS) { backStack ->
+                val alertasViewModel: AlertasViewModel = viewModel(
+                    viewModelStoreOwner = backStack,
+                    factory = alertasFactory
+                )
+
+                AlertasScreen(
+                    navController = navController,
+                    viewModel = alertasViewModel
+                )
             }
 
-            // Selección de granja, galpón y línea para registrar
+            // Selección para registrar flushing
             composable(Routes.FLUSHING) {
                 FlushingHomeScreen(navController)
             }
@@ -200,6 +311,14 @@ fun AppNavHost() {
                     ?.toIntOrNull() ?: 0
 
                 FlushingDetalleScreen(navController, lineaId)
+            }
+
+            // Simulación compartida entre pantallas
+            composable(Routes.SIMULACION) {
+                SimulacionScreen(
+                    navController = navController,
+                    viewModel = simulacionViewModel
+                )
             }
         }
     }

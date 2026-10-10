@@ -131,6 +131,17 @@ fun OperarioScreen(
 
             OutlinedButton(
                 onClick = {
+                    navController.navigate(Routes.SIMULACION) {
+                        launchSingleTop = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Simulación de temperaturas")
+            }
+
+            OutlinedButton(
+                onClick = {
                     navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth()

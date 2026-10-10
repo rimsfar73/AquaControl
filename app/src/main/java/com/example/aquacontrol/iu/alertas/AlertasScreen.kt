@@ -25,18 +25,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.model.estado.EstadoLinea
+import com.example.aquacontrol.model.temperatura.OrigenMedicion
 import com.example.aquacontrol.viewmodel.alertas.AlertaLinea
 import com.example.aquacontrol.viewmodel.alertas.AlertasUiState
 import com.example.aquacontrol.viewmodel.alertas.AlertasViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AlertasScreen(
     navController: NavController,
-    viewModel: AlertasViewModel = viewModel()
+    viewModel: AlertasViewModel
 ) {
     val estado by viewModel.uiState.collectAsState()
 
@@ -58,16 +61,8 @@ fun AlertasScreen(
 
             item {
                 Text(
-                    text = "Líneas con temperaturas fuera del rango normal.",
+                    text = "Estado según la última medición guardada de cada línea.",
                     style = MaterialTheme.typography.bodyLarge
-                )
-            }
-
-            item {
-                Text(
-                    text = "Datos de demostración. Las fechas corresponden a las mediciones de ejemplo.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -80,47 +75,85 @@ fun AlertasScreen(
 
                 is AlertasUiState.Success -> {
                     val criticas = actual.alertas.count {
-                        it.linea.estado == EstadoLinea.CRITICO
+                        it.medicion.estado == EstadoLinea.CRITICO
                     }
 
                     val advertencias = actual.alertas.count {
-                        it.linea.estado == EstadoLinea.ADVERTENCIA
+                        it.medicion.estado == EstadoLinea.ADVERTENCIA
                     }
 
+                    val lineasConMediciones =
+                        actual.totalLineas - actual.lineasSinMediciones
+
                     item {
-                        Text(
-                            text = "Críticas: $criticas · Advertencias: $advertencias",
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                        Card(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Críticas: $criticas · Advertencias: $advertencias",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+
+                                Text(
+                                    text = "Líneas con mediciones: " +
+                                            "$lineasConMediciones de ${actual.totalLineas}"
+                                )
+
+                                Text(
+                                    text = "Sin mediciones: ${actual.lineasSinMediciones}"
+                                )
+                            }
+                        }
+                    }
+
+                    if (actual.lineasSinMediciones > 0) {
+                        item {
+                            Text(
+                                text = "Las líneas sin mediciones no tienen un estado térmico evaluado.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+
+                    if (actual.alertas.isEmpty()) {
+                        item {
+                            val mensaje = when {
+                                actual.totalLineas == 0 ->
+                                    "No hay líneas registradas."
+
+                                lineasConMediciones == 0 ->
+                                    "Todavía no hay mediciones para evaluar alertas."
+
+                                else ->
+                                    "No hay advertencias ni alertas críticas " +
+                                            "en las últimas mediciones disponibles."
+                            }
+
+                            Text(
+                                text = mensaje,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
                     }
 
                     items(
                         items = actual.alertas,
-                        key = { it.linea.id }
+                        key = { it.medicion.lineaId }
                     ) { alerta ->
                         TarjetaAlerta(
                             alerta = alerta,
                             onVerLinea = {
                                 navController.navigate(
-                                    "${Routes.DETALLE_LINEA}/${alerta.linea.id}"
+                                    "${Routes.DETALLE_LINEA}/${alerta.medicion.lineaId}"
                                 ) {
                                     launchSingleTop = true
                                 }
                             }
                         )
-                    }
-                }
-
-                AlertasUiState.Empty -> {
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "No se encontraron líneas en advertencia o estado crítico en los datos consultados.",
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
                     }
                 }
 
@@ -131,28 +164,31 @@ fun AlertasScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                }
-            }
 
-            item {
-                OutlinedButton(
-                    onClick = viewModel::cargarAlertas,
-                    enabled = estado !is AlertasUiState.Loading,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = if (estado is AlertasUiState.Error) {
-                            "Reintentar"
-                        } else {
-                            "Actualizar alertas"
+                    item {
+                        Button(
+                            onClick = viewModel::cargarAlertas,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Reintentar")
                         }
-                    )
+                    }
                 }
             }
 
             item {
+                Text(
+                    text = "La lista se actualiza al guardar nuevas mediciones. " +
+                            "Las lecturas simuladas se identifican en cada tarjeta.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            item {
                 OutlinedButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = {
+                        navController.popBackStack()
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Volver")
@@ -167,7 +203,8 @@ private fun TarjetaAlerta(
     alerta: AlertaLinea,
     onVerLinea: () -> Unit
 ) {
-    val esCritica = alerta.linea.estado == EstadoLinea.CRITICO
+    val medicion = alerta.medicion
+    val esCritica = medicion.estado == EstadoLinea.CRITICO
 
     val colorFondo = if (esCritica) {
         MaterialTheme.colorScheme.errorContainer
@@ -181,10 +218,15 @@ private fun TarjetaAlerta(
         Color(0xFF4D3800)
     }
 
-    val titulo = when (alerta.linea.estado) {
+    val titulo = when (medicion.estado) {
         EstadoLinea.CRITICO -> "ALERTA CRÍTICA"
         EstadoLinea.ADVERTENCIA -> "ADVERTENCIA"
         EstadoLinea.NORMAL -> "NORMAL"
+    }
+
+    val origen = when (medicion.origen) {
+        OrigenMedicion.MANUAL -> "Manual"
+        OrigenMedicion.SIMULADA -> "Simulada"
     }
 
     Card(
@@ -214,25 +256,36 @@ private fun TarjetaAlerta(
             )
 
             Text(
-                text = alerta.linea.nombre,
+                text = alerta.nombreLinea,
                 style = MaterialTheme.typography.titleMedium
             )
 
             Text(
-                text = "Temperatura: ${alerta.linea.temperatura} °C",
+                text = "Temperatura: ${medicion.temperatura} °C",
                 style = MaterialTheme.typography.titleLarge
             )
 
             Text(
-                text = "Última medición: ${alerta.linea.actualizado}",
+                text = "Origen: $origen"
+            )
+
+            Text(
+                text = "Última medición: ${
+                    formatearFechaAlerta(medicion.fechaHora)
+                }",
                 style = MaterialTheme.typography.bodyMedium
             )
 
             Text(
-                text = if (esCritica) {
-                    "Revisa esta línea con prioridad y verifica la medición."
-                } else {
-                    "Revisa la temperatura y las condiciones de esta línea."
+                text = when {
+                    medicion.origen == OrigenMedicion.SIMULADA ->
+                        "Alerta generada por una simulación; no corresponde a un sensor real."
+
+                    esCritica ->
+                        "Revisa esta línea con prioridad y verifica la medición."
+
+                    else ->
+                        "Revisa la temperatura y las condiciones de esta línea."
                 }
             )
 
@@ -244,4 +297,13 @@ private fun TarjetaAlerta(
             }
         }
     }
+}
+
+private fun formatearFechaAlerta(fechaHora: Long): String {
+    val formato = SimpleDateFormat(
+        "dd/MM/yyyy HH:mm:ss",
+        Locale.getDefault()
+    )
+
+    return formato.format(Date(fechaHora))
 }
