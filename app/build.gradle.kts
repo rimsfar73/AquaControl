@@ -4,6 +4,9 @@ plugins {
     alias(aclibs.plugins.ksp)
 }
 
+// Leemos la dirección que indique cada desarrollador al compilar la app.
+val backendUrl = providers.gradleProperty("AQUA_BACKEND_URL")
+
 android {
     namespace = "com.example.aquacontrol"
     compileSdk = 37
@@ -18,7 +21,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Desde el emulador usamos 10.0.2.2 para llegar al backend del PC.
+            val url = backendUrl.getOrElse("http://10.0.2.2:8080/")
+            buildConfigField("String", "BACKEND_URL", "\"$url\"")
+        }
+
         release {
+            // Para la entrega indicamos la dirección del servidor al compilar.
+            val url = backendUrl.getOrElse("")
+            buildConfigField("String", "BACKEND_URL", "\"$url\"")
+
             optimization {
                 enable = false
             }
@@ -32,6 +45,9 @@ android {
 
     buildFeatures {
         compose = true
+
+        // Generamos BuildConfig para leer BACKEND_URL desde el código Kotlin.
+        buildConfig = true
     }
 }
 
