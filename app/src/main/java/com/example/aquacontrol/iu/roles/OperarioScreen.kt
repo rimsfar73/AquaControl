@@ -23,12 +23,17 @@ import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.ui.theme.Blue
 import com.example.aquacontrol.ui.theme.Muted
 import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
-
+import com.example.aquacontrol.iu.components.BotonCerrarSesion
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.fillMaxWidth
 @Composable
 fun OperarioScreen(
     navController: NavController,
-    perfilViewModel: PerfilViewModel
+    perfilViewModel: PerfilViewModel,
+    onCerrarSesion: () -> Unit
 ) {
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -39,6 +44,38 @@ fun OperarioScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "PANEL OPERARIO",
+                            color = Blue,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+
+                        Text(
+                            text = "Control en terreno",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+
+                        Text(
+                            text = "Temperaturas y flushing de tus líneas de agua.",
+                            color = Muted,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    BotonCerrarSesion(
+                        onCerrarSesion = onCerrarSesion
+                    )
+                }
+
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
