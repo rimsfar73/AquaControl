@@ -68,6 +68,7 @@ import com.example.aquacontrol.viewmodel.supervisor.SupervisorViewModel
 import com.example.aquacontrol.viewmodel.temperatura.GraficoTemperaturaViewModel
 import com.example.aquacontrol.viewmodel.temperatura.DetalleTemperaturaViewModel
 import com.example.aquacontrol.viewmodel.temperatura.RegistrarTemperaturaViewModel
+import com.example.aquacontrol.auth.LoginScreen
 
 private const val DETALLE_ALERTA = "detalleAlerta"
 private const val DETALLE_ALERTA_PARAM =
@@ -79,9 +80,22 @@ fun AppNavHost(
     lineaIdNotificacion: Int? = null,
     medicionIdNotificacion: Long? = null,
     onNotificacionAbierta: () -> Unit = {}
-) {
+
+)
+
+{
     val navController = rememberNavController()
     val perfilViewModel: PerfilViewModel = viewModel()
+    val cerrarSesion: () -> Unit = {
+        perfilViewModel.limpiarPerfil()
+
+        navController.navigate(Routes.LOGIN) {
+            popUpTo(navController.graph.id) {
+                inclusive = true
+            }
+            launchSingleTop = true
+        }
+    }
     val perfil by perfilViewModel.perfilSeleccionado.collectAsState()
     // Fuente única del permiso que se envía a las pantallas y protege las rutas.
     val puedeRegistrar = perfil == PerfilUsuario.OPERARIO
@@ -284,9 +298,27 @@ fun AppNavHost(
         // Declara las rutas y convierte sus parámetros a los IDs usados por cada pantalla.
         NavHost(
             navController = navController,
-            startDestination = Routes.ROLE_SELECTION,
+            startDestination = Routes.LOGIN,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(Routes.LOGIN) {
+                LoginScreen { nombre, rol ->
+                    perfilViewModel.actualizarNombre(nombre)
+                    perfilViewModel.seleccionarPerfil(rol)
+
+                    val destino = if (rol == PerfilUsuario.OPERARIO) {
+                        Routes.OPERARIO_HOME
+                    } else {
+                        Routes.SUPERVISOR_HOME
+                    }
+
+                    navController.navigate(destino) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+
             // Roles
             composable(Routes.ROLE_SELECTION) {
                 RolSelectionScreen(navController, perfilViewModel)
@@ -295,7 +327,7 @@ fun AppNavHost(
             composable(Routes.OPERARIO_HOME) {
                 // Permiso del perfil: solo Operario puede acceder a acciones que registran datos.
                 if (puedeRegistrar) {
-                    OperarioScreen(navController, perfilViewModel)
+                    OperarioScreen(navController, perfilViewModel,onCerrarSesion = cerrarSesion)
                 } else {
                     Text("Selecciona el rol Operario desde Inicio para acceder.")
                 }
@@ -310,7 +342,8 @@ fun AppNavHost(
                 SupervisorScreen(
                     navController = navController,
                     perfilViewModel = perfilViewModel,
-                    viewModel = supervisorViewModel
+                    viewModel = supervisorViewModel,
+                    onCerrarSesion = cerrarSesion
                 )
             }
 

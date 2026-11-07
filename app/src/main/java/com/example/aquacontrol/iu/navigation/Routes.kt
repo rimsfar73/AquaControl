@@ -2,6 +2,8 @@
 package com.example.aquacontrol.iu.navigation
 
 object Routes {
+    // Loggin
+    const val LOGIN = "login"
 
     // Roles
     const val ROLE_SELECTION = "roleSelection"

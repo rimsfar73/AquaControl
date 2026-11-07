@@ -48,6 +48,7 @@ import com.example.aquacontrol.ui.theme.Paper
 import com.example.aquacontrol.ui.theme.Red
 import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.automirrored.outlined.Assignment
 
 @Composable
 fun RolSelectionScreen(
@@ -308,7 +309,7 @@ fun RolSelectionScreen(
                     AquaTarjetaRol(
                         titulo = "Supervisor",
                         descripcion = "Monitoreo, historial y alertas",
-                        icono = Icons.Outlined.Assignment,
+                        Icons.AutoMirrored.Outlined.Assignment,
                         colorFondo = Red,
                         onClick = {
                             if (

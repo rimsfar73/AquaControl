@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class PerfilViewModel : ViewModel() {
 
+
+
     // Nombre del usuario (puedes cambiarlo cuando tengas login real)
     private val _nombreUsuario = MutableStateFlow("Camila")
     val nombreUsuario: StateFlow<String> = _nombreUsuario.asStateFlow()
@@ -22,6 +24,7 @@ class PerfilViewModel : ViewModel() {
 
     fun limpiarPerfil() {
         _perfilSeleccionado.value = null
+        _nombreUsuario.value = ""
     }
 
     // Si en el futuro quieres cambiar el nombre dinámicamente:

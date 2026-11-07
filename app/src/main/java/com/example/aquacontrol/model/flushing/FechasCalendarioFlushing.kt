@@ -108,7 +108,10 @@ object FechasCalendarioFlushing {
     private fun formatear(fecha: Long, patron: String): String {
         return SimpleDateFormat(
             patron,
-            Locale("es", "CL")
+            Locale.Builder()
+                .setLanguage("es")
+                .setRegion("CL")
+                .build()
         ).apply {
             timeZone = zonaCalendario
         }.format(Date(fecha))
