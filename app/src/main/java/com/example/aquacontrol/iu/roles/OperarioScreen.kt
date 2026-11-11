@@ -1,9 +1,12 @@
+
 package com.example.aquacontrol.iu.roles
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOn
@@ -14,19 +17,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+
 import com.example.aquacontrol.iu.components.AquaPanelResumen
 import com.example.aquacontrol.iu.components.AquaTarjetaAccion
+import com.example.aquacontrol.iu.components.BotonCerrarSesion
+import com.example.aquacontrol.iu.components.WeatherCard
 import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.ui.theme.Blue
 import com.example.aquacontrol.ui.theme.Muted
 import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
-import com.example.aquacontrol.iu.components.BotonCerrarSesion
-import androidx.compose.foundation.layout.Row
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.fillMaxWidth
+
 @Composable
 fun OperarioScreen(
     navController: NavController,
@@ -38,21 +42,26 @@ fun OperarioScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+
+            // 1. Encabezado del operario
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.Top
                 ) {
+
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+
                         Text(
                             text = "PANEL OPERARIO",
                             color = Blue,
@@ -75,33 +84,19 @@ fun OperarioScreen(
                         onCerrarSesion = onCerrarSesion
                     )
                 }
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "PANEL OPERARIO",
-                        color = Blue,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-
-                    Text(
-                        text = "Control en terreno",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-
-                    Text(
-                        text = "Temperaturas y flushing de tus líneas de agua.",
-                        color = Muted,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
             }
 
+            // 2. Condiciones meteorológicas desde Spring Boot
+            item {
+                WeatherCard()
+            }
+
+            // 3. Resumen de la operación
             item {
                 AquaPanelResumen(
                     etiqueta = "CONTROL DE LA OPERACIÓN"
                 ) {
+
                     Text(
                         text = "Revisa, registra y da seguimiento",
                         style = MaterialTheme.typography.headlineSmall
@@ -114,6 +109,7 @@ fun OperarioScreen(
                 }
             }
 
+            // 4. Granjas
             item {
                 AquaTarjetaAccion(
                     titulo = "Ver granjas",
@@ -127,6 +123,7 @@ fun OperarioScreen(
                 )
             }
 
+            // 5. Alertas
             item {
                 AquaTarjetaAccion(
                     titulo = "Alertas",
@@ -140,6 +137,7 @@ fun OperarioScreen(
                 )
             }
 
+            // 6. Registro de flushing
             item {
                 AquaTarjetaAccion(
                     titulo = "Registrar flushing",
@@ -153,6 +151,7 @@ fun OperarioScreen(
                 )
             }
 
+            // 7. Simulación de temperaturas
             item {
                 AquaTarjetaAccion(
                     titulo = "Simulación de temperaturas",

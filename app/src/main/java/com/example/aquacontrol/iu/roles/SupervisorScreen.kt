@@ -1,8 +1,10 @@
+
 package com.example.aquacontrol.iu.roles
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -18,28 +20,28 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+
 import com.example.aquacontrol.iu.components.AquaPanelResumen
 import com.example.aquacontrol.iu.components.AquaTarjetaAccion
+import com.example.aquacontrol.iu.components.BotonCerrarSesion
+import com.example.aquacontrol.iu.components.WeatherCard
 import com.example.aquacontrol.iu.navigation.Routes
 import com.example.aquacontrol.ui.theme.Blue
 import com.example.aquacontrol.ui.theme.Muted
 import com.example.aquacontrol.viewmodel.perfil.PerfilViewModel
 import com.example.aquacontrol.viewmodel.supervisor.SupervisorUiState
 import com.example.aquacontrol.viewmodel.supervisor.SupervisorViewModel
-import com.example.aquacontrol.iu.components.BotonCerrarSesion
-import androidx.compose.foundation.layout.Row
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.fillMaxWidth
+
 @Composable
 fun SupervisorScreen(
     navController: NavController,
     perfilViewModel: PerfilViewModel,
     viewModel: SupervisorViewModel,
     onCerrarSesion: () -> Unit
-
 ) {
 
     val estado by viewModel.uiState.collectAsState()
@@ -48,34 +50,39 @@ fun SupervisorScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+
+            // 1. Encabezado del supervisor
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.Top
                 ) {
+
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+
                         Text(
-                            text = "PANEL OPERARIO",
+                            text = "PANEL SUPERVISOR",
                             color = Blue,
                             style = MaterialTheme.typography.labelMedium
                         )
 
                         Text(
-                            text = "Control en terreno",
+                            text = "Visión de operación",
                             style = MaterialTheme.typography.headlineMedium
                         )
 
                         Text(
-                            text = "Temperaturas y flushing de tus líneas de agua.",
+                            text = "Estado de las líneas bajo tu supervisión.",
                             color = Muted,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -85,31 +92,16 @@ fun SupervisorScreen(
                         onCerrarSesion = onCerrarSesion
                     )
                 }
-
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "PANEL SUPERVISOR",
-                        color = Blue,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-
-                    Text(
-                        text = "Visión de operación",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-
-                    Text(
-                        text = "Estado de las líneas bajo tu supervisión.",
-                        color = Muted,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
             }
 
+            // 2. Condiciones meteorológicas desde Spring Boot
+            item {
+                WeatherCard()
+            }
+
+            // 3. Estado de las líneas
             when (val actual = estado) {
+
                 SupervisorUiState.Loading -> {
                     item {
                         CircularProgressIndicator()
@@ -121,12 +113,16 @@ fun SupervisorScreen(
                         AquaPanelResumen(
                             etiqueta = "ESTADO ACTUAL"
                         ) {
+
                             if (actual.totalLineas == 0) {
+
                                 Text(
                                     text = "No hay líneas disponibles.",
                                     style = MaterialTheme.typography.titleLarge
                                 )
+
                             } else {
+
                                 Text(
                                     text = "${actual.lineasNormales} de " +
                                             "${actual.totalLineas} líneas " +
@@ -165,6 +161,7 @@ fun SupervisorScreen(
                         Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+
                             Text(
                                 text = actual.mensaje,
                                 color = MaterialTheme.colorScheme.error,
@@ -186,6 +183,7 @@ fun SupervisorScreen(
                 }
             }
 
+            // 4. Líneas e historiales
             item {
                 AquaTarjetaAccion(
                     titulo = "Líneas e historiales",
@@ -199,6 +197,7 @@ fun SupervisorScreen(
                 )
             }
 
+            // 5. Alertas
             item {
                 AquaTarjetaAccion(
                     titulo = "Ver alertas",
