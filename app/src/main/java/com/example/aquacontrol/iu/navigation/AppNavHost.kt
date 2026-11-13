@@ -69,7 +69,8 @@ import com.example.aquacontrol.viewmodel.temperatura.GraficoTemperaturaViewModel
 import com.example.aquacontrol.viewmodel.temperatura.DetalleTemperaturaViewModel
 import com.example.aquacontrol.viewmodel.temperatura.RegistrarTemperaturaViewModel
 import com.example.aquacontrol.auth.LoginScreen
-
+import com.example.aquacontrol.auth.AuthSessionManager
+import android.util.Log
 private const val DETALLE_ALERTA = "detalleAlerta"
 private const val DETALLE_ALERTA_PARAM =
     "$DETALLE_ALERTA/{lineaId}/{medicionId}"
@@ -86,9 +87,23 @@ fun AppNavHost(
 {
     val navController = rememberNavController()
     val perfilViewModel: PerfilViewModel = viewModel()
+
     val cerrarSesion: () -> Unit = {
+
+        // Eliminamos el JWT y los datos de la sesión.
+        AuthSessionManager.limpiarSesion()
+
+        // Evidencia técnica del cierre de sesión.
+        Log.d(
+            "JWT_TEST",
+            "JWT después de logout: " +
+                    (AuthSessionManager.obtenerToken() != null)
+        )
+
+        // Limpiamos el perfil del usuario.
         perfilViewModel.limpiarPerfil()
 
+        // Regresamos al login.
         navController.navigate(Routes.LOGIN) {
             popUpTo(navController.graph.id) {
                 inclusive = true
@@ -96,6 +111,7 @@ fun AppNavHost(
             launchSingleTop = true
         }
     }
+
     val perfil by perfilViewModel.perfilSeleccionado.collectAsState()
     // Fuente única del permiso que se envía a las pantallas y protege las rutas.
     val puedeRegistrar = perfil == PerfilUsuario.OPERARIO
