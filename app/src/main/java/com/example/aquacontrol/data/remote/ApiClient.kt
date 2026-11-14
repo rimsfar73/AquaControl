@@ -1,21 +1,18 @@
 package com.example.aquacontrol.data.remote
 
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import com.example.aquacontrol.auth.remote.AuthApiClient
 
-// Recibimos la dirección del backend para poder elegirla según dónde probamos la app.
+// Usamos la conexión autenticada que ya utiliza el login.
+// Así compartimos la configuración de Retrofit y el envío del JWT.
 class ApiClient(baseUrl: String) {
 
-    // Configuramos Retrofit con la dirección del servidor y usamos Gson
-    // para convertir nuestros DTO a JSON al enviar datos y leerlos al recibirlos.
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(baseUrl)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+    // AuthApiClient incorpora AuthInterceptor, que obtiene el token
+    // de AuthSessionManager y lo agrega a las solicitudes al backend.
+    private val clienteAutenticado = AuthApiClient(baseUrl)
 
-    // Pasamos una interfaz, como FlushingApiService, y Retrofit usa sus
-    // anotaciones para saber qué ruta llamar y qué datos enviar.
+    // Creamos servicios como FlushingApiService usando esa conexión.
+    // Conservamos esta función para no cambiar sus llamadas actuales.
     fun <T> crearServicio(interfaz: Class<T>): T {
-        return retrofit.create(interfaz)
+        return clienteAutenticado.crearServicio(interfaz)
     }
 }
