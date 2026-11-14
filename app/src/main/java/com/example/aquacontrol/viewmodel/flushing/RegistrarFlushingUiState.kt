@@ -1,5 +1,6 @@
 package com.example.aquacontrol.viewmodel.flushing
 
+import com.example.aquacontrol.data.flushing.remote.FlushingRemotoDto
 import com.example.aquacontrol.model.flushing.EventoFlushing
 
 data class RegistrarFlushingUiState(
@@ -19,5 +20,16 @@ data class RegistrarFlushingUiState(
 
     val guardando: Boolean = false,
     val errorGuardado: String? = null,
-    val eventoGuardado: EventoFlushing? = null
+
+    // Conservamos temporalmente el resultado del formulario local
+    // mientras completamos la conexión con el backend.
+    val eventoGuardado: EventoFlushing? = null,
+
+    // Recordamos el registro confirmado por el backend para
+    // reintentar su foto sin volver a crear el flushing.
+    val registroConfirmado: FlushingRemotoDto? = null,
+
+    // Confirmamos que terminó el guardado del registro y,
+    // cuando corresponde, también la subida de su foto.
+    val guardadoRemotoCompleto: Boolean = false
 )

@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.aquacontrol.iu.components.AquaEncabezado
+import com.example.aquacontrol.viewmodel.flushing.FotoDetalleFlushingUiState
 import com.example.aquacontrol.viewmodel.flushing.DetalleFlushingRemotoUiState
 import com.example.aquacontrol.viewmodel.flushing.DetalleFlushingRemotoViewModel
 import java.text.SimpleDateFormat
@@ -175,6 +176,13 @@ fun DetalleFlushingRemotoScreen(
                     }
 
                     item {
+                        FotoDelDetalleRemoto(
+                            estado = actual.foto,
+                            alReintentar = { viewModel.reintentarFoto() }
+                        )
+                    }
+
+                    item {
                         OutlinedButton(
                             onClick = {
                                 viewModel.cargar(lineaId, registroId)
@@ -217,4 +225,82 @@ private fun fechaDescargaFlushing(instante: Long): String {
         "dd/MM/yyyy HH:mm",
         Locale.getDefault()
     ).format(Date(instante))
+}
+
+// Mostramos la evidencia sin reemplazar los datos cuando falla su consulta.
+@Composable
+private fun FotoDelDetalleRemoto(
+    estado: FotoDetalleFlushingUiState,
+    alReintentar: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Foto de evidencia",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        when (estado) {
+            FotoDetalleFlushingUiState.Cargando -> {
+                CircularProgressIndicator()
+                Text("Cargando foto…")
+            }
+
+            is FotoDetalleFlushingUiState.Disponible -> {
+                FotoFlushing(fotoRuta = estado.nombreArchivo)
+
+                if (estado.desdeCopiaLocal) {
+                    Text(
+                        text = "Mostrando la foto descargada anteriormente. " +
+                                "No pudimos comprobar si cambió en el servidor.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    OutlinedButton(
+                        onClick = alReintentar,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Actualizar foto")
+                    }
+                }
+            }
+
+            FotoDetalleFlushingUiState.SinFoto -> {
+                Text("No hay una foto disponible para este registro en el servidor.")
+                OutlinedButton(
+                    onClick = alReintentar,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Consultar nuevamente")
+                }
+            }
+
+            FotoDetalleFlushingUiState.SinCopiaLocal -> {
+                Text(
+                    "No pudimos consultar la foto y no hay una copia descargada. " +
+                            "Conéctate al backend para intentar obtenerla."
+                )
+                OutlinedButton(
+                    onClick = alReintentar,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Reintentar foto")
+                }
+            }
+
+            is FotoDetalleFlushingUiState.Error -> {
+                Text(
+                    text = estado.mensaje,
+                    color = MaterialTheme.colorScheme.error
+                )
+                OutlinedButton(
+                    onClick = alReintentar,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Reintentar foto")
+                }
+            }
+        }
+    }
 }
