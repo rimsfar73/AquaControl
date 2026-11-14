@@ -202,7 +202,7 @@ fun RolSelectionScreen(
                     )
 
                     AsyncImage(
-                        model = R.drawable.logo_ariztia,
+                        model = R.drawable.logo_ariztia_transparente,
                         contentDescription = "Ariztía",
                         contentScale = ContentScale.Fit,
                         onSuccess = {

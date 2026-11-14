@@ -1,7 +1,4 @@
-// Conecta pantallas, repositorios y ViewModels; aplica los permisos del rol seleccionado.
-// Conecta con: data/flushing/local/FlushingLocalDataSource.kt (desde com/example/aquacontrol).
-// Conecta con: data/temperatura/local/TemperaturaLocalDataSource.kt (desde com/example/aquacontrol).
-// Conecta con: notificaciones/NotificadorAlertas.kt (desde com/example/aquacontrol).
+
 package com.example.aquacontrol.iu.navigation
 
 import androidx.compose.foundation.layout.padding
@@ -24,6 +21,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.aquacontrol.BuildConfig
@@ -93,6 +91,8 @@ fun AppNavHost(
 
 {
     val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
     val perfilViewModel: PerfilViewModel = viewModel()
 
     val cerrarSesion: () -> Unit = {
@@ -352,12 +352,14 @@ fun AppNavHost(
     // Reserva el área de la barra inferior y entrega su margen al contenido navegable.
     Scaffold(
         bottomBar = {
-            BottomBar(
-                navController = navController,
-                perfil = perfil,
-                cantidadCriticas = cantidadCriticas,
-                cantidadAdvertencias = cantidadAdvertencias
-            )
+            if (currentRoute != Routes.LOGIN) {
+                BottomBar(
+                    navController = navController,
+                    perfil = perfil,
+                    cantidadCriticas = cantidadCriticas,
+                    cantidadAdvertencias = cantidadAdvertencias
+                )
+            }
         }
     ) { innerPadding ->
         // Declara las rutas y convierte sus parámetros a los IDs usados por cada pantalla.
