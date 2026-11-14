@@ -2,6 +2,7 @@
 // Conecta con: viewmodel/flushing/RegistrarFlushingViewModel.kt (desde com/example/aquacontrol).
 package com.example.aquacontrol.iu.flushing
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -91,8 +92,13 @@ fun RegistrarFlushingScreen(
             if (capturada && FotosFlushing.esFotoValida(context, nombre)) {
                 val anterior = fotoConservada
 
-                fotoConservada = nombre
                 viewModel.actualizarFoto(nombre)
+                // Conservamos la foto anterior si el cambio fue rechazado.
+                if (viewModel.uiState.value.fotoRuta != nombre) {
+                    FotosFlushing.eliminarFotoNoGuardada(context, nombre)
+                    return@rememberLauncherForActivityResult
+                }
+                fotoConservada = nombre
 
                 if (anterior != null && anterior != nombre) {
                     FotosFlushing.eliminarFotoNoGuardada(
@@ -121,23 +127,34 @@ fun RegistrarFlushingScreen(
     // La confirmación pertenece a esta línea y se conserva al recrear la pantalla.
     var confirmarGuardado by rememberSaveable(lineaId) { mutableStateOf(false) }
 
-    val registrado = estado.eventoGuardado != null
+    val registrado = estado.guardadoRemotoCompleto
     val capturando = fotoPendiente != null
     // Bloquea la edición durante captura o guardado y después de completar el registro.
-    val editable = !estado.guardando && !registrado && !capturando
+    val puedeOperar = !estado.guardando && !registrado && !capturando
+    val fotoPorConfirmar = estado.registroConfirmado != null && !registrado
+    val editable = puedeOperar && estado.registroConfirmado == null
+
+    // Evitamos salir mientras esperamos la confirmación del servidor.
+    BackHandler(enabled = estado.guardando) { }
 
     // Cancelar o cerrar el diálogo conserva los campos y la foto para seguir editando.
-    if (confirmarGuardado && editable && estado.lineaId == lineaId) {
+    if (confirmarGuardado && puedeOperar && estado.lineaId == lineaId) {
         AlertDialog(
             onDismissRequest = { confirmarGuardado = false },
-            title = { Text("Confirmar guardado") },
+            title = { Text(if (fotoPorConfirmar) "Reintentar foto" else "Confirmar guardado") },
             text = {
-                Text("¿Confirmas que deseas guardar los datos de flushing?")
+                Text(
+                    if (fotoPorConfirmar) {
+                        "El flushing ya existe. Enviaremos solamente su foto."
+                    } else {
+                        "Guardaremos el flushing en el servidor y después su foto, si la agregaste."
+                    }
+                )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (confirmarGuardado && editable && estado.lineaId == lineaId) {
+                        if (confirmarGuardado && puedeOperar && estado.lineaId == lineaId) {
                             // Cierra primero y vuelve a comprobar la evidencia antes de guardar.
                             confirmarGuardado = false
                             val foto = estado.fotoRuta
@@ -157,7 +174,7 @@ fun RegistrarFlushingScreen(
                     },
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Guardar")
+                    Text(if (fotoPorConfirmar) "Enviar foto" else "Guardar")
                 }
             },
             dismissButton = {
@@ -258,6 +275,14 @@ fun RegistrarFlushingScreen(
                 }
             }
 
+            if (fotoPorConfirmar) {
+                Text(
+                    text = "Los datos ya están guardados. Puedes reintentar la foto " +
+                            "o tomar otra para este mismo registro.",
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
             Text(
                 text = "Foto de evidencia (opcional)",
                 style = MaterialTheme.typography.titleMedium
@@ -298,7 +323,7 @@ fun RegistrarFlushingScreen(
                         )
                     }
                 },
-                enabled = editable,
+                enabled = puedeOperar,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -335,7 +360,7 @@ fun RegistrarFlushingScreen(
             Button(
                 // Abre la confirmación sin guardar todavía el registro.
                 onClick = { confirmarGuardado = true },
-                enabled = editable && estado.lineaId == lineaId,
+                enabled = puedeOperar && estado.lineaId == lineaId,
                 shape = RoundedCornerShape(14.dp),
                 elevation = ButtonDefaults.buttonElevation(
                     defaultElevation = 4.dp,
@@ -356,10 +381,10 @@ fun RegistrarFlushingScreen(
                     Text("Guardando…")
                 } else {
                     Text(
-                        text = if (registrado) {
-                            "Registro guardado"
-                        } else {
-                            "Guardar flushing"
+                        text = when {
+                            registrado -> "Registro guardado"
+                            fotoPorConfirmar -> "Reintentar subida de foto"
+                            else -> "Guardar flushing"
                         },
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -409,10 +434,33 @@ fun RegistrarFlushingScreen(
                         )
 
                         Text(
-                            text = "Flushing guardado correctamente.",
+                            text = if (estado.fotoRuta != null) {
+                                "Flushing y foto guardados en el servidor."
+                            } else {
+                                "Flushing guardado en el servidor."
+                            },
                             modifier = Modifier.weight(1f)
                         )
                     }
+                }
+            }
+
+            if (registrado) {
+                OutlinedButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Volver al historial")
+                }
+            }
+
+            if (estado.errorGuardado != null && !fotoPorConfirmar) {
+                TextButton(
+                    onClick = { navController.popBackStack() },
+                    enabled = !estado.guardando,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Volver y revisar el historial")
                 }
             }
 

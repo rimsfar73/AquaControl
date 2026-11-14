@@ -29,6 +29,7 @@ import androidx.navigation.navArgument
 import com.example.aquacontrol.BuildConfig
 import com.example.aquacontrol.repository.data.FlushingConsultaRepository
 import com.example.aquacontrol.repository.data.FlushingRemoteRepository
+import com.example.aquacontrol.repository.data.FotoFlushingRepository
 import com.example.aquacontrol.iu.flushing.DetalleFlushingRemotoScreen
 import com.example.aquacontrol.viewmodel.flushing.DetalleFlushingRemotoViewModel
 import com.example.aquacontrol.data.AppDatabase
@@ -64,6 +65,7 @@ import com.example.aquacontrol.viewmodel.detalle.DetalleLineaViewModel
 import com.example.aquacontrol.viewmodel.flushing.DetalleFlushingViewModel
 import com.example.aquacontrol.viewmodel.flushing.FlushingViewModel
 import com.example.aquacontrol.viewmodel.flushing.RegistrarFlushingViewModel
+import com.example.aquacontrol.viewmodel.flushing.RegistrarFlushingViewModelFactory
 import com.example.aquacontrol.viewmodel.galpones.GalponViewModel
 import com.example.aquacontrol.viewmodel.historial.HistorialTemperaturaViewModel
 import com.example.aquacontrol.viewmodel.lineas.LineaViewModel
@@ -173,21 +175,38 @@ fun AppNavHost(
         }
     }
 
-    // El detalle remoto comparte la misma fuente y conserva los IDs Long.
-    val detalleFlushingRemotoFactory = remember(consultaFlushing) {
+    // Consultamos la foto y conservamos su referencia en la copia remota.
+    val fotosFlushing = remember(appContext, database) {
+        lazy {
+            FotoFlushingRepository(
+                context = appContext,
+                dao = database.flushingRemotoDao(),
+                remoto = FlushingRemoteRepository(),
+                servidor = BuildConfig.BACKEND_URL.trim().trimEnd('/')
+            )
+        }
+    }
+
+    // El detalle carga sus datos y su foto con estados independientes.
+    val detalleFlushingRemotoFactory = remember(consultaFlushing, fotosFlushing) {
         viewModelFactory {
             initializer {
-                DetalleFlushingRemotoViewModel(consultaFlushing.value)
+                DetalleFlushingRemotoViewModel(
+                    repository = consultaFlushing.value,
+                    fotosRepository = fotosFlushing.value
+                )
             }
         }
     }
 
-    // Inyecta FlushingRepository al ViewModel de registro; esta es la fábrica usada actualmente.
-    val registroFactory = remember(flushingRepository) {
-        viewModelFactory {
-            initializer {
-                RegistrarFlushingViewModel(flushingRepository)
-            }
+    // Conectamos el registro y su foto con el backend autenticado.
+    // Creamos la fábrica al abrir el formulario con una URL configurada.
+    val registroFactory = remember(appContext) {
+        lazy {
+            RegistrarFlushingViewModelFactory(
+                context = appContext,
+                repository = FlushingRemoteRepository()
+            )
         }
     }
 
@@ -663,11 +682,13 @@ fun AppNavHost(
                     Text(
                         "No se pudo identificar la línea. Vuelve y selecciónala."
                     )
+                } else if (BuildConfig.BACKEND_URL.isBlank()) {
+                    Text("Falta configurar la dirección del backend para registrar.")
                 } else {
                     val registroViewModel: RegistrarFlushingViewModel =
                         viewModel(
                             viewModelStoreOwner = backStack,
-                            factory = registroFactory
+                            factory = registroFactory.value
                         )
 
                     RegistrarFlushingScreen(
