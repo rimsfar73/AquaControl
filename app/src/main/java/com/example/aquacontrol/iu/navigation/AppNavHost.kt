@@ -26,6 +26,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.aquacontrol.BuildConfig
+import com.example.aquacontrol.repository.data.FlushingConsultaRepository
+import com.example.aquacontrol.repository.data.FlushingRemoteRepository
+import com.example.aquacontrol.iu.flushing.DetalleFlushingRemotoScreen
+import com.example.aquacontrol.viewmodel.flushing.DetalleFlushingRemotoViewModel
 import com.example.aquacontrol.data.AppDatabase
 import com.example.aquacontrol.data.flushing.FotosFlushing
 import com.example.aquacontrol.data.flushing.local.FlushingLocalDataSource
@@ -144,10 +149,35 @@ fun AppNavHost(
         )
     }
 
-    val historialFactory = remember(flushingRepository) {
+    // Preparamos la consulta al backend y su copia Room cuando se necesitan.
+    // Conservamos aparte el repositorio de registros locales antiguos.
+    val consultaFlushing = remember(database) {
+        lazy {
+            FlushingConsultaRepository(
+                dao = database.flushingRemotoDao(),
+                remoto = FlushingRemoteRepository(),
+                servidor = BuildConfig.BACKEND_URL.trim().trimEnd('/')
+            )
+        }
+    }
+
+    // El historial consulta el servidor y puede mostrar la copia descargada.
+    val historialFactory = remember(flushingRepository, consultaFlushing) {
         viewModelFactory {
             initializer {
-                FlushingViewModel(flushingRepository)
+                FlushingViewModel(
+                    repository = flushingRepository,
+                    consultaRemota = consultaFlushing.value
+                )
+            }
+        }
+    }
+
+    // El detalle remoto comparte la misma fuente y conserva los IDs Long.
+    val detalleFlushingRemotoFactory = remember(consultaFlushing) {
+        viewModelFactory {
+            initializer {
+                DetalleFlushingRemotoViewModel(consultaFlushing.value)
             }
         }
     }
@@ -597,6 +627,8 @@ fun AppNavHost(
                     Text(
                         "No se pudo identificar la línea. Vuelve y selecciónala."
                     )
+                } else if (BuildConfig.BACKEND_URL.isBlank()) {
+                    Text("Falta configurar la dirección del backend.")
                 } else {
                     val historialViewModel: FlushingViewModel = viewModel(
                         viewModelStoreOwner = backStack,
@@ -646,7 +678,37 @@ fun AppNavHost(
                 }
             }
 
-            // Detalle de un registro de flushing
+            // Abrimos registros remotos sin utilizar los IDs de la tabla antigua.
+            composable(
+                route = "flushingRemotoDetalle/{lineaId}/{registroId}",
+                arguments = listOf(
+                    navArgument("lineaId") { type = NavType.LongType },
+                    navArgument("registroId") { type = NavType.LongType }
+                )
+            ) { backStack ->
+                val lineaId = backStack.arguments?.getLong("lineaId") ?: 0L
+                val registroId = backStack.arguments?.getLong("registroId") ?: 0L
+
+                if (lineaId <= 0L || registroId <= 0L) {
+                    Text("No se pudo identificar el registro de flushing.")
+                } else if (BuildConfig.BACKEND_URL.isBlank()) {
+                    Text("Falta configurar la dirección del backend.")
+                } else {
+                    val detalleRemotoViewModel: DetalleFlushingRemotoViewModel =
+                        viewModel(
+                            viewModelStoreOwner = backStack,
+                            factory = detalleFlushingRemotoFactory
+                        )
+
+                    DetalleFlushingRemotoScreen(
+                        lineaId = lineaId,
+                        registroId = registroId,
+                        viewModel = detalleRemotoViewModel
+                    )
+                }
+            }
+
+            // Conservamos el detalle original para los registros locales antiguos.
             composable(
                 route = Routes.DETALLE_FLUSHING_PARAM,
                 arguments = listOf(
