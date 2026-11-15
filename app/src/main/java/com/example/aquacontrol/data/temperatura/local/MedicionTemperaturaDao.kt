@@ -4,6 +4,7 @@ package com.example.aquacontrol.data.temperatura.local
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 // Filtro SQL compartido; los rangos deben coincidir con model/estado/EstadoLinea.kt.
@@ -40,6 +41,32 @@ interface MedicionTemperaturaDao {
     suspend fun insertarMedicion(
         medicion: MedicionTemperaturaEntity
     ): Long
+
+    // Actualiza una fila conservando su ID local de Room.
+    @Update
+    suspend fun actualizarMedicion(
+        medicion: MedicionTemperaturaEntity
+    ): Int
+
+    // Encuentra la copia local de una fila identificada por PostgreSQL.
+    @Query(
+        "SELECT * FROM mediciones_temperatura " +
+                "WHERE idServidor = :idServidor LIMIT 1"
+    )
+    suspend fun obtenerPorIdServidor(
+        idServidor: Long
+    ): MedicionTemperaturaEntity?
+
+    // Devuelve solo las filas que ya corresponden al servidor.
+    @Query(
+        "SELECT * FROM mediciones_temperatura " +
+                "WHERE idServidor IS NOT NULL"
+    )
+    suspend fun obtenerMedicionesRemotas(): List<MedicionTemperaturaEntity>
+
+    // Quita una fila por su clave local al reconciliar la copia del servidor.
+    @Query("DELETE FROM mediciones_temperatura WHERE id = :idLocal")
+    suspend fun eliminarPorIdLocal(idLocal: Long): Int
 
     @Query(
         """

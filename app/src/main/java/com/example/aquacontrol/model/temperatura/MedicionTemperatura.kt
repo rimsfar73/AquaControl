@@ -7,7 +7,8 @@ data class MedicionTemperatura(
     val lineaId: Int,
     val temperatura: Double,
     val fechaHora: Long,
-    val origen: OrigenMedicion
+    val origen: OrigenMedicion,
+    val observacion: String? = null
 ) {
     val estado: EstadoLinea
         get() = EstadoLinea.desdeTemperatura(temperatura)

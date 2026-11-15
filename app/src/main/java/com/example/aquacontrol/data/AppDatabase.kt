@@ -21,7 +21,7 @@ import com.example.aquacontrol.data.temperatura.local.MedicionTemperaturaEntity
         MedicionTemperaturaEntity::class,
         FlushingRemotoEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -119,6 +119,26 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // Asociamos cada medición local con su ID de PostgreSQL y conservamos
+        // la observación remota para actualizarla sin perder datos.
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `mediciones_temperatura` " +
+                            "ADD COLUMN `idServidor` INTEGER"
+                )
+                db.execSQL(
+                    "ALTER TABLE `mediciones_temperatura` " +
+                            "ADD COLUMN `observacion` TEXT"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                            "`index_mediciones_temperatura_idServidor` " +
+                            "ON `mediciones_temperatura` (`idServidor`)"
+                )
+            }
+        }
+
         // Compartimos una sola instancia de la base dentro de la aplicación.
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -131,7 +151,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_1_2,
                         MIGRATION_2_3,
                         MIGRATION_3_4,
-                        MIGRATION_4_5
+                        MIGRATION_4_5,
+                        MIGRATION_5_6
                     )
                     .build()
                     .also { database ->
