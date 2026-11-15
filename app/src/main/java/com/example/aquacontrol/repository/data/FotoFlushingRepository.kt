@@ -99,6 +99,34 @@ class FotoFlushingRepository(
         )
     }
 
+    // Limpiamos las imágenes conocidas del registro ya eliminado.
+    // El llamador debe haber confirmado antes el borrado en el servidor.
+    suspend fun limpiarTrasEliminacion(
+        registro: FlushingRemotoEntity,
+        fotoMostrada: String?
+    ): Boolean = withContext(Dispatchers.IO) {
+        require(registro.servidor == servidor && registro.id > 0) {
+            "El registro no corresponde al servidor seleccionado."
+        }
+
+        // Si Room aún conserva el registro, dejamos también su imagen.
+        if (dao.obtener(servidor, registro.id) != null) {
+            return@withContext false
+        }
+
+        val nombres = listOfNotNull(registro.fotoRuta, fotoMostrada)
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        var limpiezaCompleta = true
+        for (nombre in nombres) {
+            if (!FotosFlushing.eliminarFotoNoGuardada(appContext, nombre)) {
+                limpiezaCompleta = false
+            }
+        }
+        limpiezaCompleta
+    }
+
     private fun consultarCopia(
         nombreArchivo: String?
     ): ResultadoFotoFlushing {

@@ -3,6 +3,8 @@ package com.example.aquacontrol.repository.data
 import com.example.aquacontrol.data.flushing.local.FlushingRemotoDao
 import com.example.aquacontrol.data.flushing.local.FlushingRemotoEntity
 import com.example.aquacontrol.data.flushing.remote.aCopiaLocal
+import com.example.aquacontrol.data.flushing.remote.FlushingRemotoDto
+import kotlinx.coroutines.CancellationException
 import retrofit2.HttpException
 import java.io.IOException
 
@@ -16,6 +18,17 @@ data class ConsultaHistorialFlushing(
 data class ConsultaDetalleFlushing(
     val registro: FlushingRemotoEntity?,
     val desdeCopiaLocal: Boolean
+)
+
+// Distinguimos la confirmación del servidor de la actualización de Room.
+data class ResultadoEdicionFlushing(
+    val registro: FlushingRemotoEntity,
+    val copiaActualizada: Boolean
+)
+
+// Informamos por separado si se pudo retirar la copia del dispositivo.
+data class ResultadoEliminacionFlushing(
+    val copiaEliminada: Boolean
 )
 
 // Consultamos el backend y conservamos una copia para lectura offline.
@@ -138,6 +151,96 @@ class FlushingConsultaRepository(
             registro = nuevaCopia,
             desdeCopiaLocal = false
         )
+    }
+
+    // Enviamos los cambios al servidor; nunca guardamos una edición offline.
+    suspend fun actualizar(
+        registro: FlushingRemotoEntity,
+        observacion: String,
+        duracionSegundos: Int,
+        temperaturaAntes: Double?,
+        temperaturaDespues: Double?
+    ): ResultadoEdicionFlushing {
+        require(registro.servidor == servidor) {
+            "El registro pertenece a otro servidor."
+        }
+        require(registro.id > 0 && registro.lineaId > 0) {
+            "El registro y su línea deben ser válidos."
+        }
+        require(duracionSegundos > 0) { "La duración debe ser mayor que cero." }
+        require(observacion.trim().length <= 500) {
+            "La observación admite hasta 500 caracteres."
+        }
+        require(temperaturaAntes == null || temperaturaAntes.isFinite()) {
+            "La temperatura anterior no es válida."
+        }
+        require(temperaturaDespues == null || temperaturaDespues.isFinite()) {
+            "La temperatura posterior no es válida."
+        }
+
+        // Conservamos la línea y fecha originales. La foto tiene su propia ruta.
+        val solicitud = FlushingRemotoDto(
+            id = registro.id,
+            lineaId = registro.lineaId,
+            fechaHora = registro.fechaHora,
+            duracionSegundos = duracionSegundos,
+            observacion = observacion.trim(),
+            temperaturaAntes = temperaturaAntes,
+            temperaturaDespues = temperaturaDespues
+        )
+
+        // Si falla el PUT, propagamos el error sin modificar la copia local.
+        val respuesta = remoto.actualizar(registro.id, solicitud)
+        require(respuesta.id == registro.id && respuesta.lineaId == registro.lineaId) {
+            "El servidor devolvió un registro diferente al solicitado."
+        }
+        val confirmado = respuesta.aCopiaLocal(
+            servidor = servidor,
+            descargadoEn = System.currentTimeMillis(),
+            fotoRuta = registro.fotoRuta
+        )
+
+        // Si PostgreSQL confirmó y Room falla, informamos ambas cosas.
+        // No presentamos un fallo local como si el servidor hubiera rechazado los datos.
+        return try {
+            val copiaActual = dao.obtener(servidor, registro.id)
+            val nuevaCopia = confirmado.copy(
+                fotoRuta = copiaActual?.fotoRuta ?: confirmado.fotoRuta
+            )
+            dao.guardar(nuevaCopia)
+            ResultadoEdicionFlushing(nuevaCopia, copiaActualizada = true)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            ResultadoEdicionFlushing(confirmado, copiaActualizada = false)
+        }
+    }
+
+    // El servidor verifica que la sesión pertenezca a un supervisor.
+    // No borramos la copia local ante errores de conexión o permisos.
+    suspend fun eliminar(
+        registro: FlushingRemotoEntity
+    ): ResultadoEliminacionFlushing {
+        require(registro.servidor == servidor && registro.id > 0) {
+            "El registro no corresponde al servidor seleccionado."
+        }
+
+        try {
+            remoto.eliminar(registro.id)
+        } catch (e: HttpException) {
+            // Si ya no existe, también podemos retirar su copia local.
+            if (e.code() != 404) throw e
+        }
+
+        return try {
+            dao.eliminar(servidor, registro.id)
+            ResultadoEliminacionFlushing(copiaEliminada = true)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // El borrado remoto sí terminó; no afirmamos que haya fallado.
+            ResultadoEliminacionFlushing(copiaEliminada = false)
+        }
     }
 
     private suspend fun consultarCopiaLocal(

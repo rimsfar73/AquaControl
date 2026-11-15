@@ -733,7 +733,10 @@ fun AppNavHost(
                     DetalleFlushingRemotoScreen(
                         lineaId = lineaId,
                         registroId = registroId,
-                        viewModel = detalleRemotoViewModel
+                        viewModel = detalleRemotoViewModel,
+                        puedeEditar = puedeRegistrar,
+                        puedeEliminar = perfil == PerfilUsuario.SUPERVISOR,
+                        alVolver = { navController.popBackStack() }
                     )
                 }
             }
