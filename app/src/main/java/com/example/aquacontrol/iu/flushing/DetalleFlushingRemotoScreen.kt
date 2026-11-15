@@ -1,5 +1,14 @@
 package com.example.aquacontrol.iu.flushing
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.aquacontrol.viewmodel.flushing.EdicionFlushingUiState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,6 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.aquacontrol.iu.components.AquaEncabezado
@@ -31,9 +43,55 @@ import java.util.Locale
 fun DetalleFlushingRemotoScreen(
     lineaId: Long,
     registroId: Long,
-    viewModel: DetalleFlushingRemotoViewModel
+    viewModel: DetalleFlushingRemotoViewModel,
+    puedeEditar: Boolean = false,
+    puedeEliminar: Boolean = false,
+    alVolver: () -> Unit = {}
 ) {
     val estado by viewModel.uiState.collectAsState()
+    val disponible = estado as? DetalleFlushingRemotoUiState.Disponible
+    val edicion = disponible?.edicion
+
+    var confirmarEliminacion by rememberSaveable(lineaId, registroId) {
+        mutableStateOf(false)
+    }
+
+    BackHandler(
+        enabled = edicion?.guardando == true || disponible?.eliminando == true
+    ) { }
+
+    if (
+        confirmarEliminacion && puedeEliminar && disponible != null &&
+        disponible.edicion == null && !disponible.desdeCopiaLocal
+    ) {
+        AlertDialog(
+            onDismissRequest = { confirmarEliminacion = false },
+            title = { Text("Eliminar flushing") },
+            text = {
+                Text("Se eliminará este registro y su foto del servidor. Esta acción no se puede deshacer.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmarEliminacion = false
+                        viewModel.eliminarRegistro()
+                    },
+                    enabled = !disponible.eliminando
+                ) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmarEliminacion = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (puedeEditar && edicion != null) {
+        DialogoEdicionFlushing(edicion = edicion, viewModel = viewModel)
+    }
 
     // Consultamos exactamente el registro indicado por la navegación.
     LaunchedEffect(lineaId, registroId, viewModel) {
@@ -57,6 +115,20 @@ fun DetalleFlushingRemotoScreen(
                 DetalleFlushingRemotoUiState.Cargando -> {
                     item {
                         CircularProgressIndicator()
+                    }
+                }
+
+                is DetalleFlushingRemotoUiState.Eliminado -> {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(actual.mensaje)
+                            OutlinedButton(
+                                onClick = alVolver,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Volver al historial")
+                            }
+                        }
                     }
                 }
 
@@ -175,10 +247,62 @@ fun DetalleFlushingRemotoScreen(
                         }
                     }
 
+                    actual.mensajeEdicion?.let { mensaje ->
+                        item {
+                            Text(
+                                text = mensaje,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+
+                    if (puedeEditar) {
+                        item {
+                            OutlinedButton(
+                                onClick = { viewModel.iniciarEdicion() },
+                                enabled = !actual.desdeCopiaLocal && actual.edicion == null && !actual.eliminando,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Editar flushing")
+                            }
+                            if (actual.desdeCopiaLocal) {
+                                Text("Actualiza con conexión para poder editar este registro.")
+                            }
+                        }
+                    }
+
+                    if (puedeEliminar) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(
+                                    onClick = { confirmarEliminacion = true },
+                                    enabled = !actual.desdeCopiaLocal &&
+                                            actual.edicion == null && !actual.eliminando,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = if (actual.eliminando) "Eliminando…" else "Eliminar flushing",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                                if (actual.eliminando) {
+                                    CircularProgressIndicator()
+                                }
+                                if (actual.desdeCopiaLocal) {
+                                    Text("Actualiza con conexión antes de eliminar este registro.")
+                                }
+                                actual.errorEliminacion?.let { mensaje ->
+                                    Text(text = mensaje, color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+
                     item {
                         FotoDelDetalleRemoto(
                             estado = actual.foto,
-                            alReintentar = { viewModel.reintentarFoto() }
+                            alReintentar = { viewModel.reintentarFoto() },
+                            habilitado = !actual.eliminando
                         )
                     }
 
@@ -187,6 +311,7 @@ fun DetalleFlushingRemotoScreen(
                             onClick = {
                                 viewModel.cargar(lineaId, registroId)
                             },
+                            enabled = actual.edicion == null && !actual.eliminando,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Actualizar")
@@ -231,7 +356,8 @@ private fun fechaDescargaFlushing(instante: Long): String {
 @Composable
 private fun FotoDelDetalleRemoto(
     estado: FotoDetalleFlushingUiState,
-    alReintentar: () -> Unit
+    alReintentar: () -> Unit,
+    habilitado: Boolean = true
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -259,6 +385,7 @@ private fun FotoDelDetalleRemoto(
                     )
                     OutlinedButton(
                         onClick = alReintentar,
+                        enabled = habilitado,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Actualizar foto")
@@ -270,6 +397,7 @@ private fun FotoDelDetalleRemoto(
                 Text("No hay una foto disponible para este registro en el servidor.")
                 OutlinedButton(
                     onClick = alReintentar,
+                    enabled = habilitado,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Consultar nuevamente")
@@ -283,6 +411,7 @@ private fun FotoDelDetalleRemoto(
                 )
                 OutlinedButton(
                     onClick = alReintentar,
+                    enabled = habilitado,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Reintentar foto")
@@ -296,6 +425,7 @@ private fun FotoDelDetalleRemoto(
                 )
                 OutlinedButton(
                     onClick = alReintentar,
+                    enabled = habilitado,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Reintentar foto")
@@ -303,4 +433,98 @@ private fun FotoDelDetalleRemoto(
             }
         }
     }
+}
+
+// Editamos solo los campos permitidos; conservamos fecha, línea y foto.
+@Composable
+private fun DialogoEdicionFlushing(
+    edicion: EdicionFlushingUiState,
+    viewModel: DetalleFlushingRemotoViewModel
+) {
+    AlertDialog(
+        onDismissRequest = {
+            if (!edicion.guardando) viewModel.cancelarEdicion()
+        },
+        title = { Text("Editar flushing") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CampoEdicionFlushing(
+                    etiqueta = "Observación",
+                    valor = edicion.observacion,
+                    alCambiar = { viewModel.editarObservacion(it) },
+                    habilitado = !edicion.guardando,
+                    variasLineas = true
+                )
+                CampoEdicionFlushing(
+                    etiqueta = "Duración en segundos",
+                    valor = edicion.duracion,
+                    alCambiar = { viewModel.editarDuracion(it) },
+                    habilitado = !edicion.guardando,
+                    teclado = KeyboardType.Number
+                )
+                CampoEdicionFlushing(
+                    etiqueta = "Temperatura antes (°C)",
+                    valor = edicion.temperaturaAntes,
+                    alCambiar = { viewModel.editarTemperaturaAntes(it) },
+                    habilitado = !edicion.guardando,
+                    teclado = KeyboardType.Decimal
+                )
+                CampoEdicionFlushing(
+                    etiqueta = "Temperatura después (°C)",
+                    valor = edicion.temperaturaDespues,
+                    alCambiar = { viewModel.editarTemperaturaDespues(it) },
+                    habilitado = !edicion.guardando,
+                    teclado = KeyboardType.Decimal
+                )
+                Text("Una temperatura vacía quedará como sin dato.")
+                edicion.error?.let {
+                    Text(text = it, color = MaterialTheme.colorScheme.error)
+                }
+                if (edicion.guardando) {
+                    CircularProgressIndicator()
+                    Text("Guardando cambios en el servidor…")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { viewModel.guardarEdicion() },
+                enabled = !edicion.guardando
+            ) {
+                Text("Guardar cambios")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { viewModel.cancelarEdicion() },
+                enabled = !edicion.guardando
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun CampoEdicionFlushing(
+    etiqueta: String,
+    valor: String,
+    alCambiar: (String) -> Unit,
+    habilitado: Boolean,
+    teclado: KeyboardType = KeyboardType.Text,
+    variasLineas: Boolean = false
+) {
+    OutlinedTextField(
+        value = valor,
+        onValueChange = alCambiar,
+        label = { Text(etiqueta) },
+        enabled = habilitado,
+        singleLine = !variasLineas,
+        minLines = if (variasLineas) 2 else 1,
+        keyboardOptions = KeyboardOptions(keyboardType = teclado),
+        modifier = Modifier.fillMaxWidth()
+    )
 }
