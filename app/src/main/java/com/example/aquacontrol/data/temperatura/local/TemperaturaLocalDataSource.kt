@@ -1,8 +1,8 @@
-// Traduce el filtro del dominio a parámetros del DAO de temperaturas.
 package com.example.aquacontrol.data.temperatura.local
 
 import com.example.aquacontrol.model.temperatura.FiltroHistorialTemperatura
 import kotlinx.coroutines.flow.Flow
+import kotlin.collections.iterator
 
 class TemperaturaLocalDataSource(
     private val dao: MedicionTemperaturaDao
@@ -13,6 +13,89 @@ class TemperaturaLocalDataSource(
         medicion: MedicionTemperaturaEntity
     ): Long {
         return dao.insertarMedicion(medicion)
+    }
+
+    // Inserta o actualiza la copia local de una medición confirmada por PostgreSQL.
+    // Si ya existe, conserva el ID local para no invalidar referencias de la interfaz.
+    suspend fun guardarMedicionRemota(
+        medicion: MedicionTemperaturaEntity
+    ): Long {
+        val idServidor = requireNotNull(medicion.idServidor) {
+            "La medición remota debe incluir el ID del servidor."
+        }
+        require(idServidor > 0L) {
+            "El servidor devolvió un ID de medición inválido."
+        }
+
+        val existente = dao.obtenerPorIdServidor(idServidor)
+        if (existente != null) {
+            val actualizadas = dao.actualizarMedicion(
+                medicion.copy(id = existente.id)
+            )
+            check(actualizadas == 1) {
+                "No se pudo actualizar la copia local de la medición."
+            }
+            return existente.id
+        }
+
+        return dao.insertarMedicion(medicion.copy(id = 0L))
+    }
+
+    // Sincroniza las filas remotas de una línea y conserva las mediciones locales simuladas.
+    suspend fun sincronizarMedicionesRemotasPorLinea(
+        lineaId: Int,
+        mediciones: List<MedicionTemperaturaEntity>
+    ) {
+        require(lineaId > 0) { "Selecciona una línea válida." }
+        require(mediciones.all { it.lineaId == lineaId && it.idServidor != null }) {
+            "La respuesta remota contiene mediciones de otra línea o sin ID de servidor."
+        }
+
+        val recibidasPorId = mediciones.associateBy { it.idServidor!! }
+        require(recibidasPorId.size == mediciones.size) {
+            "El servidor devolvió IDs de temperatura repetidos."
+        }
+
+        val anteriores = dao.obtenerMedicionesRemotas()
+            .filter { it.lineaId == lineaId }
+            .associateBy { it.idServidor!! }
+
+        for (medicion in mediciones) {
+            guardarMedicionRemota(medicion)
+        }
+
+        // Retiramos copias eliminadas en PostgreSQL sin tocar filas locales/simuladas.
+        for ((idServidor, anterior) in anteriores) {
+            if (idServidor !in recibidasPorId) {
+                dao.eliminarPorIdLocal(anterior.id)
+            }
+        }
+    }
+
+    // Actualiza todas las líneas recibidas y elimina de Room las copias remotas ausentes.
+    suspend fun sincronizarTodasLasMedicionesRemotas(
+        mediciones: List<MedicionTemperaturaEntity>
+    ) {
+        require(mediciones.all { it.idServidor != null && it.lineaId > 0 }) {
+            "La respuesta remota contiene una medición sin identificadores válidos."
+        }
+        require(mediciones.map { it.idServidor }.distinct().size == mediciones.size) {
+            "El servidor devolvió IDs de temperatura repetidos."
+        }
+
+        val recibidasPorId = mediciones.associateBy { it.idServidor!! }
+        val anteriores = dao.obtenerMedicionesRemotas()
+            .associateBy { it.idServidor!! }
+
+        for (medicion in mediciones) {
+            guardarMedicionRemota(medicion)
+        }
+
+        for ((idServidor, anterior) in anteriores) {
+            if (idServidor !in recibidasPorId) {
+                dao.eliminarPorIdLocal(anterior.id)
+            }
+        }
     }
 
     // Emite el historial de la línea y sus cambios posteriores.

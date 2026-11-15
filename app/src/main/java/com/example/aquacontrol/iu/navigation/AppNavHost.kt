@@ -76,6 +76,10 @@ import com.example.aquacontrol.viewmodel.temperatura.RegistrarTemperaturaViewMod
 import com.example.aquacontrol.auth.LoginScreen
 import com.example.aquacontrol.auth.AuthSessionManager
 import android.util.Log
+import com.example.aquacontrol.data.remote.AquaControlApiClient
+import com.example.aquacontrol.data.temperatura.remote.TemperaturaRemoteDataSource
+
+
 private const val DETALLE_ALERTA = "detalleAlerta"
 private const val DETALLE_ALERTA_PARAM =
     "$DETALLE_ALERTA/{lineaId}/{medicionId}"
@@ -147,7 +151,10 @@ fun AppNavHost(
             localDataSource = TemperaturaLocalDataSource(
                 database.medicionTemperaturaDao()
             ),
-            notificadorAlertas = notificadorAlertas
+            notificadorAlertas = notificadorAlertas,
+            fuenteRemota = TemperaturaRemoteDataSource(
+                AquaControlApiClient.service
+            )
         )
     }
 

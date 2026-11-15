@@ -1,10 +1,13 @@
-// Guarda en Room, convierte entidades y solicita el aviso tras persistir la medición.
+// Sincroniza las lecturas manuales con el backend y conserva su copia observable en Room.
 // Conecta con: data/temperatura/local/TemperaturaLocalDataSource.kt (desde com/example/aquacontrol).
 // Conecta con: notificaciones/NotificadorAlertas.kt (desde com/example/aquacontrol).
 // Conecta con: repository/bebedero/BebederoRepository.kt (desde com/example/aquacontrol).
 package com.example.aquacontrol.repository.temperatura
 
 import android.util.Log
+import com.example.aquacontrol.data.temperatura.remote.TemperaturaRemoteDataSource
+import com.example.aquacontrol.data.temperatura.remote.aDtoRemoto
+import com.example.aquacontrol.data.temperatura.remote.aEntidadLocal
 import com.example.aquacontrol.data.temperatura.local.MedicionTemperaturaEntity
 import com.example.aquacontrol.data.temperatura.local.TemperaturaLocalDataSource
 import com.example.aquacontrol.model.perfil.PerfilUsuario
@@ -15,14 +18,18 @@ import com.example.aquacontrol.notificaciones.NotificadorAlertas
 import com.example.aquacontrol.repository.bebedero.BebederoRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.IOException
 
 class TemperaturaRepositoryImpl(
     private val localDataSource: TemperaturaLocalDataSource,
     private val notificadorAlertas: NotificadorAlertas,
+    private val fuenteRemota: TemperaturaRemoteDataSource,
     private val bebederoRepository: BebederoRepository = BebederoRepository()
 ) : TemperaturaRepository {
 
@@ -36,6 +43,12 @@ class TemperaturaRepositoryImpl(
 
         require(temperatura.isFinite()) {
             "La temperatura debe ser un número válido."
+        }
+
+        // Las lecturas manuales se confirman primero en el servidor.
+        // La simulación permanece local para no llenar PostgreSQL con datos ficticios.
+        if (origen == OrigenMedicion.MANUAL) {
+            sincronizarDesdeBackend(lineaId)
         }
 
         // Serializa lectura anterior, guardado y aviso para evitar comparaciones simultáneas.
@@ -52,11 +65,29 @@ class TemperaturaRepositoryImpl(
                 origen = origen.name
             )
 
-            val idGenerado = localDataSource.guardarMedicion(entity)
+            val entityGuardada = if (origen == OrigenMedicion.MANUAL) {
+                val respuesta = fuenteRemota.crear(
+                    entity.aDtoRemoto(
+                        id = null,
+                        observacionParaCrear = "Registro manual desde AquaControl"
+                    )
+                )
+                val confirmada = respuesta.aEntidadLocal()
+                require(
+                    confirmada.lineaId == lineaId &&
+                            confirmada.temperatura == temperatura
+                ) {
+                    "El backend devolvió una medición distinta a la enviada."
+                }
+                val idLocal = localDataSource.guardarMedicionRemota(confirmada)
+                actualizarMarcaSincronizacion(lineaId)
+                confirmada.copy(id = idLocal)
+            } else {
+                val idLocal = localDataSource.guardarMedicion(entity)
+                entity.copy(id = idLocal)
+            }
 
-            val medicionGuardada = entity.copy(
-                id = idGenerado
-            ).toModelo()
+            val medicionGuardada = entityGuardada.toModelo()
 
             try {
                 notificadorAlertas.notificarCambio(
@@ -86,10 +117,11 @@ class TemperaturaRepositoryImpl(
     ): Flow<List<MedicionTemperatura>> {
         obtenerUbicacion(lineaId)
 
-        return localDataSource.observarHistorialPorLinea(lineaId)
-            .map { mediciones ->
-                mediciones.map { it.toModelo() }
-            }
+        return observarRoomTrasSincronizar(lineaId) {
+            localDataSource.observarHistorialPorLinea(lineaId)
+        }.map { mediciones ->
+            mediciones.map { it.toModelo() }
+        }
     }
 
     // Emite solo la página solicitada, respetando filtros de estado y fecha.
@@ -101,12 +133,14 @@ class TemperaturaRepositoryImpl(
     ): Flow<List<MedicionTemperatura>> {
         obtenerUbicacion(lineaId)
 
-        return localDataSource.observarPaginaHistorial(
-            lineaId = lineaId,
-            filtro = filtro,
-            limite = limite,
-            desplazamiento = desplazamiento
-        ).map { mediciones ->
+        return observarRoomTrasSincronizar(lineaId) {
+            localDataSource.observarPaginaHistorial(
+                lineaId = lineaId,
+                filtro = filtro,
+                limite = limite,
+                desplazamiento = desplazamiento
+            )
+        }.map { mediciones ->
             mediciones.map { it.toModelo() }
         }
     }
@@ -118,10 +152,12 @@ class TemperaturaRepositoryImpl(
     ): Flow<Int> {
         obtenerUbicacion(lineaId)
 
-        return localDataSource.observarCantidadHistorial(
-            lineaId = lineaId,
-            filtro = filtro
-        )
+        return observarRoomTrasSincronizar(lineaId) {
+            localDataSource.observarCantidadHistorial(
+                lineaId = lineaId,
+                filtro = filtro
+            )
+        }
     }
 
     // Emite la lectura más reciente de la línea o null si aún no hay datos.
@@ -130,19 +166,21 @@ class TemperaturaRepositoryImpl(
     ): Flow<MedicionTemperatura?> {
         obtenerUbicacion(lineaId)
 
-        return localDataSource.observarUltimaMedicionPorLinea(lineaId)
-            .map { medicion ->
-                medicion?.toModelo()
-            }
+        return observarRoomTrasSincronizar(lineaId) {
+            localDataSource.observarUltimaMedicionPorLinea(lineaId)
+        }.map { medicion ->
+            medicion?.toModelo()
+        }
     }
 
     // Emite una última lectura por línea para actualizar resúmenes y alertas.
     override fun observarUltimasMediciones():
             Flow<List<MedicionTemperatura>> {
-        return localDataSource.observarUltimasMediciones()
-            .map { mediciones ->
-                mediciones.map { it.toModelo() }
-            }
+        return observarRoomTrasSincronizar(lineaId = null) {
+            localDataSource.observarUltimasMediciones()
+        }.map { mediciones ->
+            mediciones.map { it.toModelo() }
+        }
     }
 
     // Consulta el registro exacto para cargar el detalle o el formulario de edición.
@@ -151,6 +189,7 @@ class TemperaturaRepositoryImpl(
         medicionId: Long
     ): MedicionTemperatura? {
         obtenerUbicacion(lineaId)
+        sincronizarSiDisponible(lineaId)
         return localDataSource.obtenerMedicion(lineaId, medicionId)?.toModelo()
     }
 
@@ -177,10 +216,27 @@ class TemperaturaRepositoryImpl(
                 "La medición ya no existe en esta línea. Actualiza el historial."
             }
 
+            val temperaturaConfirmada = if (existente.idServidor != null) {
+                val respuesta = fuenteRemota.actualizar(
+                    existente.idServidor,
+                    existente.copy(temperatura = temperatura).aDtoRemoto()
+                )
+                val confirmada = respuesta.aEntidadLocal()
+                require(
+                    confirmada.idServidor == existente.idServidor &&
+                            confirmada.lineaId == lineaId
+                ) {
+                    "El backend devolvió una medición distinta a la editada."
+                }
+                confirmada.temperatura
+            } else {
+                temperatura
+            }
+
             val actualizadas = localDataSource.actualizarTemperatura(
                 lineaId = lineaId,
                 medicionId = medicionId,
-                temperatura = temperatura
+                temperatura = temperaturaConfirmada
             )
             check(actualizadas == 1) {
                 "No se pudo actualizar la medición. Actualiza el historial."
@@ -188,12 +244,12 @@ class TemperaturaRepositoryImpl(
 
             // Retira el aviso original solo si su temperatura realmente cambió.
             // La corrección actualiza los indicadores mediante Room, sin emitir otra alarma.
-            if (existente.temperatura != temperatura) {
+            if (existente.temperatura != temperaturaConfirmada) {
                 notificadorAlertas.retirarAvisoDeMedicion(lineaId, medicionId)
             }
 
             // Room emite los cambios a historiales y resúmenes; no se registra una lectura nueva.
-            existente.copy(temperatura = temperatura).toModelo()
+            existente.copy(temperatura = temperaturaConfirmada).toModelo()
         }
     }
 
@@ -209,6 +265,15 @@ class TemperaturaRepositoryImpl(
         obtenerUbicacion(lineaId)
 
         bloqueoRegistro.withLock {
+            val existente = requireNotNull(
+                localDataSource.obtenerMedicion(lineaId, medicionId)
+            ) {
+                "La medición ya no existe en esta línea. Actualiza el historial."
+            }
+
+            // Eliminamos primero en PostgreSQL; si falla, Room conserva la fila.
+            existente.idServidor?.let { fuenteRemota.eliminar(it) }
+
             val eliminadas = localDataSource.eliminarMedicion(lineaId, medicionId)
             check(eliminadas == 1) {
                 "La medición ya no existe en esta línea. Actualiza el historial."
@@ -227,12 +292,78 @@ class TemperaturaRepositoryImpl(
         hastaInclusive: Long
     ): Flow<List<MedicionTemperatura>> {
         obtenerUbicacion(lineaId)
-        return localDataSource.observarMedicionesEnIntervalo(
-            lineaId = lineaId,
-            desdeInclusive = desdeInclusive,
-            hastaInclusive = hastaInclusive
-        ).map { mediciones ->
+        return observarRoomTrasSincronizar(lineaId) {
+            localDataSource.observarMedicionesEnIntervalo(
+                lineaId = lineaId,
+                desdeInclusive = desdeInclusive,
+                hastaInclusive = hastaInclusive
+            )
+        }.map { mediciones ->
             mediciones.map { it.toModelo() }
+        }
+    }
+
+    // Room sigue siendo la fuente que observan los ViewModels. Antes de observarla,
+    // actualizamos su copia desde el servidor; ante una caída de red usamos la caché.
+    private fun <T> observarRoomTrasSincronizar(
+        lineaId: Int?,
+        crearFlujoLocal: () -> Flow<T>
+    ): Flow<T> = flow {
+        if (lineaId == null || lineaId > 0) {
+            sincronizarSiDisponible(lineaId)
+        }
+        emitAll(crearFlujoLocal())
+    }
+
+    private suspend fun sincronizarSiDisponible(lineaId: Int?) {
+        try {
+            sincronizarDesdeBackend(lineaId)
+        } catch (error: IOException) {
+            // No ocultamos 401/403 ni respuestas HTTP inválidas; solo usamos Room
+            // como respaldo cuando la conexión de red no está disponible.
+            Log.w(
+                "TemperaturaRepository",
+                "Backend no disponible; se conserva la copia local.",
+                error
+            )
+        }
+    }
+
+    private suspend fun sincronizarDesdeBackend(lineaId: Int?) {
+        require(lineaId == null || lineaId > 0) {
+            "Debes seleccionar una línea válida."
+        }
+
+        bloqueoSincronizacion.withLock {
+            val clave = lineaId ?: CLAVE_SINCRONIZACION_GLOBAL
+            val ahora = System.currentTimeMillis()
+            val ultima = ultimaSincronizacion[clave] ?: 0L
+            if (ahora - ultima < INTERVALO_MINIMO_SINCRONIZACION_MS) {
+                return@withLock
+            }
+
+            val respuesta = fuenteRemota.listar(lineaId)
+            val entidades = respuesta.map { it.aEntidadLocal() }
+
+            require(entidades.all { lineaId == null || it.lineaId == lineaId }) {
+                "El backend devolvió mediciones de otra línea."
+            }
+
+            if (lineaId == null) {
+                localDataSource.sincronizarTodasLasMedicionesRemotas(entidades)
+            } else {
+                localDataSource.sincronizarMedicionesRemotasPorLinea(
+                    lineaId = lineaId,
+                    mediciones = entidades
+                )
+            }
+            ultimaSincronizacion[clave] = System.currentTimeMillis()
+        }
+    }
+
+    private suspend fun actualizarMarcaSincronizacion(lineaId: Int) {
+        bloqueoSincronizacion.withLock {
+            ultimaSincronizacion[lineaId] = System.currentTimeMillis()
         }
     }
 
@@ -267,12 +398,17 @@ class TemperaturaRepositoryImpl(
             lineaId = lineaId,
             temperatura = temperatura,
             fechaHora = fechaHora,
-            origen = OrigenMedicion.valueOf(origen)
+            origen = OrigenMedicion.valueOf(origen),
+            observacion = observacion
         )
     }
 
     companion object {
         // Evita comparar y guardar simultáneamente desde varias instancias.
         private val bloqueoRegistro = Mutex()
+        private val bloqueoSincronizacion = Mutex()
+        private val ultimaSincronizacion = mutableMapOf<Int, Long>()
+        private const val CLAVE_SINCRONIZACION_GLOBAL = Int.MIN_VALUE
+        private const val INTERVALO_MINIMO_SINCRONIZACION_MS = 15_000L
     }
 }
