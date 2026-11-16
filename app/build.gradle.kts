@@ -22,6 +22,9 @@ android {
 
     buildTypes {
         debug {
+            // Cobertura de las pruebas unitarias.
+            enableUnitTestCoverage = true
+
             // Desde el emulador usamos 10.0.2.2 para llegar al backend del PC.
             val url = backendUrl.getOrElse("http://10.0.2.2:8080/")
             buildConfigField("String", "BACKEND_URL", "\"$url\"")
@@ -46,7 +49,7 @@ android {
     buildFeatures {
         compose = true
 
-        // Generamos BuildConfig para leer BACKEND_URL desde el código Kotlin.
+        // Generamos BuildConfig para leer BACKEND_URL desde Kotlin.
         buildConfig = true
     }
 }
@@ -75,6 +78,8 @@ dependencies {
     // Pruebas
     testImplementation(aclibs.junit)
     androidTestImplementation(platform(aclibs.androidx.compose.bom))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("com.squareup.okhttp3:okhttp:3.14.9")
     androidTestImplementation(aclibs.androidx.compose.ui.test.junit4)
     androidTestImplementation(aclibs.androidx.espresso.core)
     androidTestImplementation(aclibs.androidx.junit)

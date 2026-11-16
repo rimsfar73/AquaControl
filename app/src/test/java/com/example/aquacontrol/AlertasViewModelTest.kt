@@ -1,0 +1,48 @@
+package com.example.aquacontrol
+
+import com.example.aquacontrol.model.temperatura.MedicionTemperatura
+import com.example.aquacontrol.model.temperatura.OrigenMedicion
+import com.example.aquacontrol.viewmodel.alertas.AlertasUiState
+import com.example.aquacontrol.viewmodel.alertas.AlertasViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.*
+import org.junit.Rule
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class AlertasViewModelTest {
+    @get:Rule val mainDispatcherRule = MainDispatcherRule()
+
+    @Test fun separaNormalesSinMedicionYOrdenaCriticasAntesDeAdvertencias() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repo = FakeTemperaturaRepository().apply {
+                mediciones.value = listOf(
+                    MedicionTemperatura(1, 1, 22.0, 1, OrigenMedicion.MANUAL),
+                    MedicionTemperatura(2, 2, 19.0, 2, OrigenMedicion.MANUAL),
+                    MedicionTemperatura(3, 3, 31.0, 3, OrigenMedicion.MANUAL)
+                )
+            }
+            val vm = AlertasViewModel(repo)
+            runCurrent()
+
+            val estado = vm.uiState.value as AlertasUiState.Success
+            assertEquals(5, estado.totalLineas)
+            assertEquals(2, estado.lineasSinMediciones)
+            assertEquals(2, estado.alertas.size)
+            assertEquals(31.0, estado.alertas[0].medicion.temperatura, 0.0)
+            assertEquals(22.0, estado.alertas[1].medicion.temperatura, 0.0)
+            assertEquals("Granja Norte", estado.alertas[0].nombreGranja)
+        }
+
+    @Test fun sinMedicionesMuestraEstadoExitosoSinAlertas() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val vm = AlertasViewModel(FakeTemperaturaRepository())
+            runCurrent()
+
+            val estado = vm.uiState.value as AlertasUiState.Success
+            assertTrue(estado.alertas.isEmpty())
+            assertEquals(5, estado.lineasSinMediciones)
+        }
+}
