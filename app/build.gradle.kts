@@ -1,10 +1,11 @@
+
 plugins {
     alias(aclibs.plugins.android.application)
     alias(aclibs.plugins.kotlin.compose)
     alias(aclibs.plugins.ksp)
 }
 
-// Leemos la dirección que indique cada desarrollador al compilar la app.
+// URL configurable para cada desarrollador.
 val backendUrl = providers.gradleProperty("AQUA_BACKEND_URL")
 
 android {
@@ -17,27 +18,39 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        testInstrumentationRunner =
+            "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
-        debug {
-            // Cobertura de las pruebas unitarias.
+        getByName("debug") {
+            // Cobertura de pruebas unitarias.
             enableUnitTestCoverage = true
 
-            // Desde el emulador usamos 10.0.2.2 para llegar al backend del PC.
-            val url = backendUrl.getOrElse("http://10.0.2.2:8080/")
-            buildConfigField("String", "BACKEND_URL", "\"$url\"")
+            // Emulador Android -> backend del PC.
+            val url = backendUrl.getOrElse(
+                "http://10.0.2.2:8080/"
+            )
+
+            buildConfigField(
+                "String",
+                "BACKEND_URL",
+                "\"$url\""
+            )
         }
 
-        release {
-            // Para la entrega indicamos la dirección del servidor al compilar.
+        getByName("release") {
+            // URL configurada al compilar la aplicación.
             val url = backendUrl.getOrElse("")
-            buildConfigField("String", "BACKEND_URL", "\"$url\"")
 
-            optimization {
-                enable = false
-            }
+            buildConfigField(
+                "String",
+                "BACKEND_URL",
+                "\"$url\""
+            )
+
+            isMinifyEnabled = false
         }
     }
 
@@ -48,47 +61,71 @@ android {
 
     buildFeatures {
         compose = true
-
-        // Generamos BuildConfig para leer BACKEND_URL desde Kotlin.
         buildConfig = true
     }
 }
 
 dependencies {
+    // Jetpack Compose
     implementation(platform(aclibs.androidx.compose.bom))
     implementation(aclibs.androidx.compose.ui)
     implementation(aclibs.androidx.compose.ui.graphics)
     implementation(aclibs.androidx.compose.ui.tooling.preview)
     implementation(aclibs.androidx.compose.material3)
-    implementation("androidx.compose.material:material-icons-extended")
 
+    implementation(
+        "androidx.compose.material:material-icons-extended"
+    )
+
+    // Android y navegación
     implementation(aclibs.androidx.activity.compose)
     implementation(aclibs.androidx.core.ktx)
     implementation(aclibs.androidx.lifecycle.runtime.ktx)
-    implementation("androidx.navigation:navigation-compose:2.8.0")
 
-    // Carga asíncrona y caché de imágenes locales.
-    implementation("io.coil-kt.coil3:coil-compose:3.2.0")
+    implementation(
+        "androidx.navigation:navigation-compose:2.8.0"
+    )
 
-    // Room: persistencia local y generación de código mediante KSP
+    // Imágenes
+    implementation(
+        "io.coil-kt.coil3:coil-compose:3.2.0"
+    )
+
+    // Room + KSP
     implementation(aclibs.room.runtime)
     implementation(aclibs.room.ktx)
     ksp(aclibs.room.compiler)
 
-    // Pruebas
+    // Pruebas unitarias
     testImplementation(aclibs.junit)
-    androidTestImplementation(platform(aclibs.androidx.compose.bom))
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    testImplementation("com.squareup.okhttp3:okhttp:3.14.9")
-    androidTestImplementation(aclibs.androidx.compose.ui.test.junit4)
+
+    testImplementation(
+        "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2"
+    )
+
+    testImplementation(
+        "com.squareup.okhttp3:okhttp:3.14.9"
+    )
+
+    // Pruebas instrumentadas
+    androidTestImplementation(
+        platform(aclibs.androidx.compose.bom)
+    )
+    androidTestImplementation(
+        aclibs.androidx.compose.ui.test.junit4
+    )
     androidTestImplementation(aclibs.androidx.espresso.core)
     androidTestImplementation(aclibs.androidx.junit)
 
-    // Herramientas de Compose
+    // Herramientas Compose
     debugImplementation(aclibs.androidx.compose.ui.tooling)
     debugImplementation(aclibs.androidx.compose.ui.test.manifest)
 
-    // Comunicación con API
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    // Retrofit
+    implementation(
+        "com.squareup.retrofit2:retrofit:2.11.0"
+    )
+    implementation(
+        "com.squareup.retrofit2:converter-gson:2.11.0"
+    )
 }
