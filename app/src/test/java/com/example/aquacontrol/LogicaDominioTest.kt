@@ -175,7 +175,7 @@ class LogicaDominioTest {
         val selector = utcMillis(2026, Calendar.NOVEMBER, 15)
         val inicio = FechasHistorialTemperatura.inicioLocalDesdeSelector(selector)
         val fin = FechasHistorialTemperatura.finLocalExclusivoDesdeSelector(selector)
-        val local = Calendar.getInstance().apply { timeInMillis = inicio }
+        val local = Calendar.getInstance(TimeZone.getTimeZone("America/Santiago")).apply { timeInMillis = inicio }
 
         assertEquals(0, local.get(Calendar.HOUR_OF_DAY))
         assertEquals(0, local.get(Calendar.MINUTE))

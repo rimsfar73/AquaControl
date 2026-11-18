@@ -1,9 +1,10 @@
 package com.example.aquacontrol.viewmodel.historial
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.example.aquacontrol.data.remote.AquaControlApiClient
 import androidx.lifecycle.viewModelScope
 import com.example.aquacontrol.model.temperatura.FiltroHistorialTemperatura
-import com.example.aquacontrol.repository.bebedero.BebederoRepository
 import com.example.aquacontrol.repository.temperatura.TemperaturaRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 
 class HistorialTemperaturaViewModel(
     private val repository: TemperaturaRepository,
-    private val bebederoRepository: BebederoRepository = BebederoRepository()
+    private val resolverUbicacion: suspend (Int) -> String = ::consultarUbicacionRemota
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -127,7 +128,22 @@ class HistorialTemperaturaViewModel(
 
         observacionActual = viewModelScope.launch {
             try {
-                val ubicacion = obtenerUbicacion(lineaId)
+                // Un fallo al consultar el nombre de la ubicación NO bloquea
+                // el historial: las mediciones se consultan por lineaId.
+                val ubicacion = try {
+                    resolverUbicacion(lineaId)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    runCatching {
+                        Log.w(
+                            "HISTORIAL_TEMP",
+                            "No se resolvió la ubicación de la línea $lineaId; se continúa con las mediciones.",
+                            e
+                        )
+                    }
+                    "Línea ID $lineaId"
+                }
 
                 _uiState.value = _uiState.value.copy(
                     ubicacion = ubicacion
@@ -174,6 +190,13 @@ class HistorialTemperaturaViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                runCatching {
+                    Log.e(
+                        "HISTORIAL_TEMP",
+                        "Falló la lectura del historial de la línea $lineaId",
+                        e
+                    )
+                }
                 _uiState.value = _uiState.value.copy(
                     cargando = false,
                     mediciones = emptyList(),
@@ -184,23 +207,23 @@ class HistorialTemperaturaViewModel(
         }
     }
 
-    private fun obtenerUbicacion(lineaId: Int): String {
-        for (granja in bebederoRepository.obtenerGranjas()) {
-            for (galpon in bebederoRepository.obtenerGalpones(granja.id)) {
-                val linea = bebederoRepository
-                    .obtenerLineas(galpon.id)
-                    .firstOrNull { it.id == lineaId }
-
-                if (linea != null) {
-                    return "${granja.nombre} · " +
-                            "${galpon.nombre} · ${linea.nombre}"
-                }
-            }
-        }
-
-        throw IllegalArgumentException(
-            "La línea seleccionada no existe."
-        )
-    }
 }
 
+// El servidor define la identidad y jerarquía de las líneas.
+// No utiliza los IDs de demostración de BebederoRepository.
+private suspend fun consultarUbicacionRemota(lineaId: Int): String {
+    val api = AquaControlApiClient.service
+    val linea = api.obtenerLineaPorId(lineaId.toLong())
+    val granjas = api.listarGranjas()
+
+    for (granja in granjas) {
+        val galpon = api.listarGalpones(granja.id)
+            .firstOrNull { it.id == linea.galponId }
+        if (galpon != null) {
+            return "${granja.nombre} · ${galpon.nombre} · ${linea.nombre}"
+        }
+    }
+
+    // Si hay una línea válida sin ubicación resoluble, no perdemos el historial.
+    return "${linea.nombre} (galpón ID ${linea.galponId})"
+}

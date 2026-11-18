@@ -8,6 +8,7 @@ import com.example.aquacontrol.repository.data.FlushingRemoteRepository
 import com.example.aquacontrol.viewmodel.flushing.RegistrarFlushingViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -81,6 +82,22 @@ class RegistrarFlushingViewModelTest {
                 vm.uiState.value.errorGuardado
             )
             assertFalse(vm.uiState.value.guardando)
+        }
+
+    @Test
+    fun precargaUltimaTemperaturaSinSobrescribirValorDelOperario() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val api = FakeFlushingApiService()
+            val vm = RegistrarFlushingViewModel(
+                repository = FlushingRemoteRepository(FlushingRemoteDataSource(api)),
+                consultarUltimaTemperatura = { linea -> if (linea == 6) 21.7 else null },
+                prepararFoto = { error("Sin foto") }
+            )
+            vm.seleccionarLinea(6)
+            runCurrent()
+            assertEquals("21.7", vm.uiState.value.temperaturaAntes)
+            vm.actualizarTemperaturaAntes("22,4")
+            assertEquals("22,4", vm.uiState.value.temperaturaAntes)
         }
 
     private fun crearViewModel(api: FakeFlushingApiService) =

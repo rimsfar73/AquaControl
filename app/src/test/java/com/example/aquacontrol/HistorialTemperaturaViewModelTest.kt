@@ -32,7 +32,10 @@ class HistorialTemperaturaViewModelTest {
                     )
                 }
             }
-            val vm = HistorialTemperaturaViewModel(repo)
+            val vm = HistorialTemperaturaViewModel(
+                repository = repo,
+                resolverUbicacion = { "Granja Norte · Galpón 1 · Línea 1" }
+            )
 
             vm.cargarHistorial(1)
             runCurrent()
@@ -69,7 +72,10 @@ class HistorialTemperaturaViewModelTest {
                     )
                 }
             }
-            val vm = HistorialTemperaturaViewModel(repo)
+            val vm = HistorialTemperaturaViewModel(
+                repository = repo,
+                resolverUbicacion = { "Granja Norte · Galpón 1 · Línea 1" }
+            )
             vm.cargarHistorial(1)
             runCurrent()
             vm.paginaSiguiente()
@@ -102,7 +108,10 @@ class HistorialTemperaturaViewModelTest {
     fun lineaInvalidaYErroresDeConsultaQuedanEnEstadoRecuperable() =
         runTest(mainDispatcherRule.dispatcher) {
             val repo = FakeTemperaturaRepository()
-            val vm = HistorialTemperaturaViewModel(repo)
+            val vm = HistorialTemperaturaViewModel(
+                repository = repo,
+                resolverUbicacion = { "Granja Norte · Galpón 1 · Línea 1" }
+            )
 
             vm.cargarHistorial(-1)
             assertEquals("No se pudo identificar la línea.", vm.uiState.value.error)
@@ -123,5 +132,66 @@ class HistorialTemperaturaViewModelTest {
             assertNull(vm.uiState.value.error)
             assertFalse(vm.uiState.value.cargando)
             assertEquals(1, vm.uiState.value.totalResultados)
+        }
+    @Test
+    fun historialDeLineaSeisResuelveUbicacionSinDatosEstaticos() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repo = FakeTemperaturaRepository().apply {
+                conteo.value = 1
+                pagina.value = listOf(
+                    MedicionTemperatura(
+                        id = 99L,
+                        lineaId = 6,
+                        temperatura = 22.5,
+                        fechaHora = 1000L,
+                        origen = OrigenMedicion.MANUAL
+                    )
+                )
+            }
+            var idConsultado = 0
+            val vm = HistorialTemperaturaViewModel(
+                repository = repo,
+                resolverUbicacion = { id ->
+                    idConsultado = id
+                    "Granja Sur · Galpón 4 · Línea 1"
+                }
+            )
+
+            vm.cargarHistorial(6)
+            runCurrent()
+
+            assertEquals(6, idConsultado)
+            assertEquals("Granja Sur · Galpón 4 · Línea 1", vm.uiState.value.ubicacion)
+            assertNull(vm.uiState.value.error)
+            assertEquals(1, vm.uiState.value.totalResultados)
+            assertEquals(99L, vm.uiState.value.mediciones.first().id)
+        }
+
+    @Test
+    fun noBloqueaHistorialSiFallaElNombreDeLaUbicacion() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repo = FakeTemperaturaRepository().apply {
+                conteo.value = 1
+                pagina.value = listOf(
+                    MedicionTemperatura(
+                        id = 100L,
+                        lineaId = 6,
+                        temperatura = 23.0,
+                        fechaHora = 1001L,
+                        origen = OrigenMedicion.MANUAL
+                    )
+                )
+            }
+            val vm = HistorialTemperaturaViewModel(
+                repository = repo,
+                resolverUbicacion = { throw IllegalStateException("ubicación temporalmente no disponible") }
+            )
+
+            vm.cargarHistorial(6)
+            runCurrent()
+
+            assertEquals("Línea ID 6", vm.uiState.value.ubicacion)
+            assertNull(vm.uiState.value.error)
+            assertEquals(1, vm.uiState.value.mediciones.size)
         }
 }

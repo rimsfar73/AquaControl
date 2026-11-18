@@ -29,7 +29,7 @@ class SupervisorViewModelTest {
                     MedicionTemperatura(4, 4, 17.0, 4, OrigenMedicion.SIMULADA)
                 )
             }
-            val vm = SupervisorViewModel(repo)
+            val vm = SupervisorViewModel(repo, api = FakeCatalogoApi())
             runCurrent()
 
             val estado = vm.uiState.value as SupervisorUiState.Success
@@ -43,7 +43,7 @@ class SupervisorViewModelTest {
     fun unaFallaDeObservacionSeExponeComoErrorControlado() =
         runTest(mainDispatcherRule.dispatcher) {
             val repo = FailingSupervisorRepository()
-            val vm = SupervisorViewModel(repo)
+            val vm = SupervisorViewModel(repo, api = FakeCatalogoApi())
             runCurrent()
 
             assertEquals(

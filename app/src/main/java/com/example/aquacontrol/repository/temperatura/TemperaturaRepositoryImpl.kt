@@ -1,7 +1,6 @@
 // Sincroniza las lecturas manuales con el backend y conserva su copia observable en Room.
 // Conecta con: data/temperatura/local/TemperaturaLocalDataSource.kt (desde com/example/aquacontrol).
 // Conecta con: notificaciones/NotificadorAlertas.kt (desde com/example/aquacontrol).
-// Conecta con: repository/bebedero/BebederoRepository.kt (desde com/example/aquacontrol).
 package com.example.aquacontrol.repository.temperatura
 
 import android.util.Log
@@ -15,7 +14,6 @@ import com.example.aquacontrol.model.temperatura.FiltroHistorialTemperatura
 import com.example.aquacontrol.model.temperatura.MedicionTemperatura
 import com.example.aquacontrol.model.temperatura.OrigenMedicion
 import com.example.aquacontrol.notificaciones.NotificadorAlertas
-import com.example.aquacontrol.repository.bebedero.BebederoRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -29,8 +27,7 @@ import java.io.IOException
 class TemperaturaRepositoryImpl(
     private val localDataSource: TemperaturaLocalDataSource,
     private val notificadorAlertas: NotificadorAlertas,
-    private val fuenteRemota: TemperaturaRemoteDataSource,
-    private val bebederoRepository: BebederoRepository = BebederoRepository()
+    private val fuenteRemota: TemperaturaRemoteDataSource
 ) : TemperaturaRepository {
 
     // Registra una lectura con su línea, temperatura y origen.
@@ -367,27 +364,15 @@ class TemperaturaRepositoryImpl(
         }
     }
 
-    // Resuelve el nombre completo de la ubicación o rechaza una línea inexistente.
+    // Valida el formato del identificador sin consultar datos de demostración.
+    // La identidad de la línea proviene del backend; una línea válida con ID 6
+    // no debe rechazarse por no figurar en BebederoRepository.
+    // El texto se utiliza únicamente como contexto de las notificaciones.
     private fun obtenerUbicacion(lineaId: Int): String {
         require(lineaId > 0) {
             "Debes seleccionar una línea válida."
         }
-
-        for (granja in bebederoRepository.obtenerGranjas()) {
-            for (galpon in bebederoRepository.obtenerGalpones(granja.id)) {
-                val linea = bebederoRepository
-                    .obtenerLineas(galpon.id)
-                    .firstOrNull { it.id == lineaId }
-
-                if (linea != null) {
-                    return "${granja.nombre} · ${galpon.nombre} · ${linea.nombre}"
-                }
-            }
-        }
-
-        throw IllegalArgumentException(
-            "La línea seleccionada no existe."
-        )
+        return "Línea ID $lineaId"
     }
 
     // Convierte la entidad Room a una medición del dominio, recuperando su origen.

@@ -49,6 +49,12 @@ interface AquaControlApiService {
         @Path("galponId") galponId: Long
     ): List<LineaRemotaDto>
 
+    // Consulta directa del detalle de una línea.
+    @GET("api/v1/lineas/{id}")
+    suspend fun obtenerLineaPorId(
+        @Path("id") id: Long
+    ): LineaRemotaDto
+
     @GET("api/v1/temperatura")
     suspend fun listarTemperaturas(
         @Query("lineaId") lineaId: Long? = null

@@ -24,7 +24,7 @@ class AlertasViewModelTest {
                     MedicionTemperatura(3, 3, 31.0, 3, OrigenMedicion.MANUAL)
                 )
             }
-            val vm = AlertasViewModel(repo)
+            val vm = AlertasViewModel(repo, api = FakeCatalogoApi())
             runCurrent()
 
             val estado = vm.uiState.value as AlertasUiState.Success
@@ -36,9 +36,31 @@ class AlertasViewModelTest {
             assertEquals("Granja Norte", estado.alertas[0].nombreGranja)
         }
 
+    @Test fun catalogoRemotoIncluyeLineaSeisYActualizaAlerta() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repo = FakeTemperaturaRepository()
+            val vm = AlertasViewModel(repo, api = FakeCatalogoApi(conLineaSeis = true))
+            runCurrent()
+            repo.mediciones.value = listOf(
+                MedicionTemperatura(100, 6, 1.3, 100L, OrigenMedicion.MANUAL)
+            )
+            runCurrent()
+            val estado = vm.uiState.value as AlertasUiState.Success
+            assertEquals(6, estado.totalLineas)
+            assertEquals(1, estado.alertas.size)
+            assertEquals(6, estado.alertas[0].medicion.lineaId)
+            assertEquals(1.3, estado.alertas[0].medicion.temperatura, 0.0)
+            repo.mediciones.value = listOf(
+                MedicionTemperatura(101, 6, 56.0, 101L, OrigenMedicion.MANUAL)
+            )
+            runCurrent()
+            val actual = vm.uiState.value as AlertasUiState.Success
+            assertEquals(56.0, actual.alertas.single().medicion.temperatura, 0.0)
+        }
+
     @Test fun sinMedicionesMuestraEstadoExitosoSinAlertas() =
         runTest(mainDispatcherRule.dispatcher) {
-            val vm = AlertasViewModel(FakeTemperaturaRepository())
+            val vm = AlertasViewModel(FakeTemperaturaRepository(), api = FakeCatalogoApi())
             runCurrent()
 
             val estado = vm.uiState.value as AlertasUiState.Success

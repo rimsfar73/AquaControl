@@ -75,6 +75,7 @@ private class FakeTemperaturaApi : AquaControlApiService {
     override suspend fun listarGranjas(): List<GranjaRemotaDto> = unsupported()
     override suspend fun listarGalpones(granjaId: Long): List<GalponRemotoDto> = unsupported()
     override suspend fun listarLineas(galponId: Long): List<LineaRemotaDto> = unsupported()
+    override suspend fun obtenerLineaPorId(id: Long): LineaRemotaDto = unsupported()
 
     override suspend fun listarTemperaturas(lineaId: Long?): List<TemperaturaRemotaDto> {
         lineaSolicitada = lineaId

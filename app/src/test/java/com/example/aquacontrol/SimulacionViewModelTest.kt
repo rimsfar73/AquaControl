@@ -28,8 +28,9 @@ class SimulacionViewModelTest {
                 assertEquals(OrigenMedicion.SIMULADA, origen)
                 MedicionTemperatura(registros.toLong(), lineaId, temperatura, registros.toLong(), origen)
             }
-            val vm = SimulacionViewModel(repo)
+            val vm = SimulacionViewModel(repo, api = FakeCatalogoApi())
 
+            runCurrent()
             assertEquals(5, vm.uiState.value.lineas.size)
             vm.seleccionarLinea(999)
             assertNull(vm.uiState.value.lineaSeleccionadaId)
@@ -55,12 +56,25 @@ class SimulacionViewModelTest {
         }
 
     @Test
+    fun simulacionRemotaPermiteSeleccionarLineaSeis() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val vm = SimulacionViewModel(
+                FakeTemperaturaRepository(), api = FakeCatalogoApi(conLineaSeis = true)
+            )
+            runCurrent()
+            assertEquals(6, vm.uiState.value.lineas.size)
+            vm.seleccionarLinea(6)
+            assertEquals(6, vm.uiState.value.lineaSeleccionadaId)
+            vm.detener()
+        }
+
+    @Test
     fun errorAlRegistrarDetieneLaSimulacionConMensaje() =
         runTest(mainDispatcherRule.dispatcher) {
             val repo = FakeTemperaturaRepository().apply {
                 onRegistrar = { _, _, _ -> throw IllegalStateException("fallo de prueba") }
             }
-            val vm = SimulacionViewModel(repo)
+            val vm = SimulacionViewModel(repo, api = FakeCatalogoApi())
 
             vm.iniciar()
             advanceUntilIdle()
