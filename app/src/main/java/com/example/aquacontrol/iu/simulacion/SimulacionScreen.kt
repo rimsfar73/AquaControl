@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +41,7 @@ import com.example.aquacontrol.viewmodel.simulacion.SimulacionViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun SimulacionScreen(
@@ -47,6 +49,11 @@ fun SimulacionScreen(
     viewModel: SimulacionViewModel
 ) {
     val estado by viewModel.uiState.collectAsState()
+    val soloUna by viewModel.soloLineaSeleccionada.collectAsState()
+    val lineasActivas by viewModel.lineasEnSimulacion.collectAsState()
+    val controlesManuales by viewModel.escenariosManuales.collectAsState()
+
+    LaunchedEffect(viewModel) { viewModel.actualizarLineas() }
 
     var menuLineasAbierto by remember(estado.lineas) {
         mutableStateOf(false)
@@ -58,6 +65,9 @@ fun SimulacionScreen(
 
     val lineaSeleccionada = estado.lineas.firstOrNull {
         it.id == estado.lineaSeleccionadaId
+    }
+    val controlManualActual = estado.lineaSeleccionadaId?.let {
+        controlesManuales[it]
     }
 
     Surface(
@@ -77,7 +87,8 @@ fun SimulacionScreen(
             )
 
             Text(
-                text = "Genera registros simulados en el historial; no son lecturas de sensores.",
+                text = "Las mediciones simuladas se guardan en Room, no en PostgreSQL. " +
+                        "No representan lecturas reales de sensores.",
                 style = MaterialTheme.typography.bodyLarge
             )
 
@@ -108,6 +119,14 @@ fun SimulacionScreen(
                         text = "Mediciones guardadas en esta sesión: " +
                                 estado.medicionesGeneradas
                     )
+                    Text(
+                        text = if (estado.activa) {
+                            "Líneas simuladas: ${lineasActivas.size}. " +
+                                    "Controles manuales activos: ${controlesManuales.size}."
+                        } else {
+                            "Sin líneas simulándose actualmente."
+                        }
+                    )
 
                     val ultimaActualizacion = estado.ultimaActualizacion
 
@@ -126,9 +145,49 @@ fun SimulacionScreen(
             }
 
             Text(
-                text = "Se detiene al salir de la app. Cada inicio reinicia el contador, pero conserva el historial.",
+                text = "Cada inicio reinicia el contador y conserva el historial. " +
+                        "La simulación se detiene al cerrar la app.",
                 style = MaterialTheme.typography.bodyMedium
             )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, Navy.copy(alpha = 0.08f)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = Navy
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("Alcance de la simulación", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        if (soloUna) "Modo: solo línea seleccionada" else "Modo: todas las líneas"
+                    )
+                    OutlinedButton(
+                        onClick = { viewModel.establecerSoloLineaSeleccionada(false) },
+                        enabled = !estado.activa && soloUna,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    ) {
+                        Text("Simular todas las líneas")
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.establecerSoloLineaSeleccionada(true) },
+                        enabled = !estado.activa && !soloUna,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    ) {
+                        Text("Simular solo la línea elegida")
+                    }
+                    Text(
+                        text = "Configura el alcance antes de iniciar. En modo individual, " +
+                                "selecciona la línea en el formulario inferior.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
 
             estado.error?.let { mensaje ->
                 Text(
@@ -192,7 +251,8 @@ fun SimulacionScreen(
                             onClick = {
                                 menuLineasAbierto = true
                             },
-                            enabled = estado.lineas.isNotEmpty(),
+                            enabled = estado.lineas.isNotEmpty() &&
+                                    !(estado.activa && soloUna),
                             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                         ) {
                             Text(
@@ -261,7 +321,9 @@ fun SimulacionScreen(
                     }
 
                     Text(
-                        text = "El cambio es gradual. Después, la línea continúa automáticamente.",
+                        text = "El escenario manual se mantiene sin límite de tiempo " +
+                                "hasta liberarlo o detener la simulación. El cambio es gradual: " +
+                                "durante la transición aún puede haber alertas de otro rango.",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -277,12 +339,37 @@ fun SimulacionScreen(
 
                     Button(
                         onClick = viewModel::aplicarEscenario,
-                        enabled = estado.puedeAplicarEscenario,
+                        enabled = estado.puedeAplicarEscenario &&
+                                lineaSeleccionada != null &&
+                                lineaSeleccionada.id in lineasActivas,
                         shape = RoundedCornerShape(14.dp),
                         elevation = ButtonDefaults.buttonElevation(4.dp, 1.dp),
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                     ) {
                         Text("Aplicar escenario")
+                    }
+
+                    if (controlManualActual != null) {
+                        Text(
+                            text = "Control manual activo: " +
+                                    nombreEscenarioSimulacion(controlManualActual.escenario) +
+                                    " · Objetivo: ${controlManualActual.objetivo} °C " +
+                                    "· Duración: hasta liberar o detener.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        OutlinedButton(
+                            onClick = viewModel::liberarEscenarioSeleccionado,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                        ) {
+                            Text("Liberar escenario (volver a automático)")
+                        }
+                    } else if (estado.activa && lineaSeleccionada != null &&
+                        lineaSeleccionada.id in lineasActivas
+                    ) {
+                        Text(
+                            text = "Esta línea sigue escenarios automáticos.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
 
                     estado.mensajeEscenario?.let { mensaje ->
@@ -328,6 +415,7 @@ private fun formatearFechaSimulacion(fechaHora: Long): String {
         Locale.getDefault()
     )
 
+    formato.timeZone = TimeZone.getTimeZone("America/Santiago")
     return formato.format(Date(fechaHora))
 }
 @Composable

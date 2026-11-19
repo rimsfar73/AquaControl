@@ -38,6 +38,7 @@ import com.example.aquacontrol.viewmodel.flushing.DetalleFlushingRemotoViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun DetalleFlushingRemotoScreen(
@@ -349,7 +350,8 @@ private fun fechaDescargaFlushing(instante: Long): String {
     return SimpleDateFormat(
         "dd/MM/yyyy HH:mm",
         Locale.getDefault()
-    ).format(Date(instante))
+    ).apply { timeZone = TimeZone.getTimeZone("America/Santiago") }
+        .format(Date(instante))
 }
 
 // Mostramos la evidencia sin reemplazar los datos cuando falla su consulta.

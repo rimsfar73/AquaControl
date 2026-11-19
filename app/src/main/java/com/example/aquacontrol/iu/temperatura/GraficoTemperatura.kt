@@ -18,6 +18,7 @@ import com.example.aquacontrol.viewmodel.temperatura.GraficoTemperaturaUiState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 // Dibuja el estado recibido del ViewModel; no consulta ni modifica la base de datos.
 @Composable
@@ -75,7 +76,9 @@ private fun CurvaTemperatura(estado: GraficoTemperaturaUiState) {
         return
     }
 
-    val formatoFecha = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
+    val formatoFecha = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).apply {
+        timeZone = TimeZone.getTimeZone("America/Santiago")
+    } }
     val inicio = formatoFecha.format(Date(estado.desdeInclusive))
     val fin = formatoFecha.format(Date(estado.hastaInclusive))
     val colorLinea = MaterialTheme.colorScheme.primary

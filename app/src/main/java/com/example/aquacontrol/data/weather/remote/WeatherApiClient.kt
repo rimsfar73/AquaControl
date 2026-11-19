@@ -1,9 +1,9 @@
 package com.example.aquacontrol.data.weather.remote
 
-import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Query
-import retrofit2.converter.gson.GsonConverterFactory
+import com.example.aquacontrol.BuildConfig
+import com.example.aquacontrol.data.remote.ApiClient
 
 interface WeatherApiService {
 
@@ -15,14 +15,9 @@ interface WeatherApiService {
 }
 
 object WeatherApiClient {
-
-    private const val BASE_URL = "http://10.0.2.2:8080/"
-
+    // Comparte dirección y JWT con el resto de Retrofit. Sirve en emulador y teléfono.
     val service: WeatherApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(WeatherApiService::class.java)
+        ApiClient(BuildConfig.BACKEND_URL)
+            .crearServicio(WeatherApiService::class.java)
     }
 }

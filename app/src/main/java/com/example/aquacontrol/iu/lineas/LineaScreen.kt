@@ -45,6 +45,7 @@ import com.example.aquacontrol.viewmodel.lineas.LineaViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun LineaScreen(
@@ -228,5 +229,6 @@ private fun formatearFechaLinea(fechaHora: Long): String {
         Locale.getDefault()
     )
 
+    formato.timeZone = TimeZone.getTimeZone("America/Santiago")
     return formato.format(Date(fechaHora))
 }

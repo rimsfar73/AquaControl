@@ -3,7 +3,8 @@ package com.example.aquacontrol.viewmodel.supervisor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aquacontrol.model.estado.EstadoLinea
-import com.example.aquacontrol.repository.bebedero.BebederoRepository
+import com.example.aquacontrol.data.remote.AquaControlApiClient
+import com.example.aquacontrol.data.remote.AquaControlApiService
 import com.example.aquacontrol.repository.temperatura.TemperaturaRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -15,7 +16,7 @@ import kotlinx.coroutines.launch
 
 class SupervisorViewModel(
     private val temperaturaRepository: TemperaturaRepository,
-    private val bebederoRepository: BebederoRepository = BebederoRepository()
+    private val api: AquaControlApiService? = null
 ) : ViewModel() {
 
     private val _uiState =
@@ -77,17 +78,19 @@ class SupervisorViewModel(
         }
     }
 
-    private fun obtenerIdsLineas(): Set<Int> {
-        val idsLineas = mutableSetOf<Int>()
-
-        for (granja in bebederoRepository.obtenerGranjas()) {
-            for (galpon in bebederoRepository.obtenerGalpones(granja.id)) {
-                for (linea in bebederoRepository.obtenerLineas(galpon.id)) {
-                    idsLineas.add(linea.id)
+    private suspend fun obtenerIdsLineas(): Set<Int> {
+        val servicio = api ?: AquaControlApiClient.service
+        val ids = mutableSetOf<Int>()
+        for (granja in servicio.listarGranjas()) {
+            for (galpon in servicio.listarGalpones(granja.id)) {
+                for (linea in servicio.listarLineas(galpon.id)) {
+                    if (linea.id in 1..Int.MAX_VALUE.toLong()) {
+                        ids.add(linea.id.toInt())
+                    }
                 }
             }
         }
-
-        return idsLineas
+        return ids
     }
+
 }

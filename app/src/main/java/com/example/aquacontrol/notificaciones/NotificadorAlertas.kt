@@ -60,14 +60,16 @@ class NotificadorAlertas(context: Context) {
     fun notificarCambio(
         medicion: MedicionTemperatura,
         estadoAnterior: EstadoLinea?,
-        ubicacion: String
+        ubicacion: String,
+        actualizacionSilenciosa: Boolean = false
     ) {
         val estadoActual = medicion.estado
 
-        // No se notifican estados normales ni lecturas del mismo estado.
+        // Las ediciones sin cambio de nivel solo actualizan el aviso existente,
+        // sin generar otra alerta audible o vibración.
         if (
             estadoActual == EstadoLinea.NORMAL ||
-            estadoActual == estadoAnterior
+            (estadoActual == estadoAnterior && !actualizacionSilenciosa)
         ) {
             return
         }
@@ -145,6 +147,7 @@ class NotificadorAlertas(context: Context) {
                 }
             )
             .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setOnlyAlertOnce(actualizacionSilenciosa)
             // Identifica la medición del aviso para retirarlo si se corrige o elimina.
             .addExtras(Bundle().apply {
                 putLong(EXTRA_MEDICION_ID, medicion.id)

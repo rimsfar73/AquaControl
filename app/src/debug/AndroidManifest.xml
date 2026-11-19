@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- Permitimos HTTP en la versión de pruebas para que Retrofit
-         pueda conectarse al backend que ejecutamos en el PC. -->
+    <!-- SOLO la variante debug permite HTTP para backend de laboratorio en LAN. -->
     <application android:usesCleartextTraffic="true" />
-
 </manifest>

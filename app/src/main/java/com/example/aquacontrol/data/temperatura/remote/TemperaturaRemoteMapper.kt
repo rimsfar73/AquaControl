@@ -13,7 +13,7 @@ import java.util.TimeZone
 private fun formatoBackend(): SimpleDateFormat =
     SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT).apply {
         isLenient = false
-        timeZone = TimeZone.getDefault()
+        timeZone = TimeZone.getTimeZone("America/Santiago")
     }
 
 fun Long.aFechaHoraBackend(): String = formatoBackend().format(Date(this))

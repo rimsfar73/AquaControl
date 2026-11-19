@@ -15,9 +15,12 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+import android.util.Log
 
 class RegistrarFlushingViewModel(
     private val repository: FlushingRemoteRepository,
+    private val consultarUltimaTemperatura: (suspend (Int) -> Double?)? = null,
     private val prepararFoto: suspend (String) -> MultipartBody.Part
 ) : ViewModel() {
 
@@ -30,6 +33,29 @@ class RegistrarFlushingViewModel(
 
     fun seleccionarLinea(lineaId: Int) {
         editar { it.copy(lineaId = lineaId, errorLinea = null) }
+        val consultar = consultarUltimaTemperatura ?: return
+        if (lineaId <= 0) return
+        viewModelScope.launch {
+            try {
+                val ultima = consultar(lineaId) ?: return@launch
+                if (!ultima.isFinite()) return@launch
+                val actual = _uiState.value
+                // Nunca sobrescribe una temperatura escrita por el operario.
+                if (actual.lineaId == lineaId && actual.temperaturaAntes.isBlank() &&
+                    !actual.guardando && actual.registroConfirmado == null
+                ) {
+                    _uiState.value = actual.copy(
+                        temperaturaAntes = ultima.toString(),
+                        errorTemperaturaAntes = null
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // La precarga es opcional; el operario siempre puede digitar el valor.
+                runCatching { Log.w("AquaFlushing", "No se pudo precargar temperatura previa", e) }
+            }
+        }
     }
 
     fun actualizarObservacion(valor: String) {
@@ -233,7 +259,9 @@ class RegistrarFlushingViewModel(
             fechaHora = SimpleDateFormat(
                 "yyyy-MM-dd'T'HH:mm:ss",
                 Locale.US
-            ).format(Date()),
+            ).apply {
+                timeZone = TimeZone.getTimeZone("America/Santiago")
+            }.format(Date()),
             duracionSegundos = requireNotNull(duracion),
             observacion = observacion,
             temperaturaAntes = requireNotNull(antes),

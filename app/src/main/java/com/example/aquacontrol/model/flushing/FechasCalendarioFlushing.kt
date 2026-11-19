@@ -21,7 +21,7 @@ object FechasCalendarioFlushing {
     }
 
     fun hoy(): Long {
-        val fechaLocal = Calendar.getInstance()
+        val fechaLocal = Calendar.getInstance(TimeZone.getTimeZone("America/Santiago"))
 
         return Calendar.getInstance(zonaCalendario).apply {
             clear()

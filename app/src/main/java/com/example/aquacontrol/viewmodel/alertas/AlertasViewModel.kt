@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aquacontrol.model.estado.EstadoLinea
 import com.example.aquacontrol.model.temperatura.MedicionTemperatura
-import com.example.aquacontrol.repository.bebedero.BebederoRepository
+import android.util.Log
+import com.example.aquacontrol.data.remote.AquaControlApiClient
+import com.example.aquacontrol.data.remote.AquaControlApiService
 import com.example.aquacontrol.repository.temperatura.TemperaturaRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -38,7 +40,7 @@ sealed interface AlertasUiState {
 
 class AlertasViewModel(
     private val temperaturaRepository: TemperaturaRepository,
-    private val bebederoRepository: BebederoRepository = BebederoRepository()
+    private val api: AquaControlApiService? = null
 ) : ViewModel() {
 
     private val _uiState =
@@ -119,6 +121,7 @@ class AlertasViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                runCatching { Log.e("AquaAlertas", "Error consultando catálogo/temperaturas", e) }
                 _uiState.value = AlertasUiState.Error(
                     mensaje = "No se pudieron cargar las alertas. Intenta nuevamente."
                 )
@@ -126,15 +129,19 @@ class AlertasViewModel(
         }
     }
 
-    private fun cargarUbicaciones(): List<UbicacionLinea> {
+    // El catálogo proviene del servidor, igual que la navegación de granjas y líneas.
+    // No limitar la pantalla a los IDs 1..5 de BebederoRepository.
+    private suspend fun cargarUbicaciones(): List<UbicacionLinea> {
         val ubicaciones = mutableListOf<UbicacionLinea>()
+        val servicio = api ?: AquaControlApiClient.service
 
-        for (granja in bebederoRepository.obtenerGranjas()) {
-            for (galpon in bebederoRepository.obtenerGalpones(granja.id)) {
-                for (linea in bebederoRepository.obtenerLineas(galpon.id)) {
+        for (granja in servicio.listarGranjas()) {
+            for (galpon in servicio.listarGalpones(granja.id)) {
+                for (linea in servicio.listarLineas(galpon.id)) {
+                    if (linea.id !in 1..Int.MAX_VALUE.toLong()) continue
                     ubicaciones.add(
                         UbicacionLinea(
-                            lineaId = linea.id,
+                            lineaId = linea.id.toInt(),
                             nombreGranja = granja.nombre,
                             nombreGalpon = galpon.nombre,
                             nombreLinea = linea.nombre
@@ -143,8 +150,7 @@ class AlertasViewModel(
                 }
             }
         }
-
-        return ubicaciones
+        return ubicaciones.distinctBy { it.lineaId }
     }
 
     private data class UbicacionLinea(

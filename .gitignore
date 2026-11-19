@@ -14,3 +14,7 @@
 .cxx
 local.properties
 .idea/
+
+# APK firmadas generadas localmente
+/app/debug/
+/app/release/

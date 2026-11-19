@@ -9,6 +9,7 @@ import com.example.aquacontrol.data.temperatura.remote.aDtoRemoto
 import com.example.aquacontrol.data.temperatura.remote.aEntidadLocal
 import com.example.aquacontrol.data.temperatura.local.MedicionTemperaturaEntity
 import com.example.aquacontrol.data.temperatura.local.TemperaturaLocalDataSource
+import com.example.aquacontrol.model.estado.EstadoLinea
 import com.example.aquacontrol.model.perfil.PerfilUsuario
 import com.example.aquacontrol.model.temperatura.FiltroHistorialTemperatura
 import com.example.aquacontrol.model.temperatura.MedicionTemperatura
@@ -241,12 +242,43 @@ class TemperaturaRepositoryImpl(
 
             // Retira el aviso original solo si su temperatura realmente cambió.
             // La corrección actualiza los indicadores mediante Room, sin emitir otra alarma.
+            val medicionActualizada = existente.copy(
+                temperatura = temperaturaConfirmada
+            ).toModelo()
+
             if (existente.temperatura != temperaturaConfirmada) {
-                notificadorAlertas.retirarAvisoDeMedicion(lineaId, medicionId)
+                try {
+                    val anteriorEstado = existente.toModelo().estado
+                    val nuevoEstado = medicionActualizada.estado
+                    when {
+                        nuevoEstado == EstadoLinea.NORMAL -> {
+                            notificadorAlertas.retirarAvisoDeMedicion(lineaId, medicionId)
+                        }
+                        nuevoEstado != anteriorEstado -> {
+                            notificadorAlertas.retirarAvisoDeMedicion(lineaId, medicionId)
+                            notificadorAlertas.notificarCambio(
+                                medicion = medicionActualizada,
+                                estadoAnterior = anteriorEstado,
+                                ubicacion = obtenerUbicacion(lineaId)
+                            )
+                        }
+                        else -> {
+                            // Mismo riesgo: actualiza el aviso sin volver a interrumpir al usuario.
+                            notificadorAlertas.notificarCambio(
+                                medicion = medicionActualizada,
+                                estadoAnterior = anteriorEstado,
+                                ubicacion = obtenerUbicacion(lineaId),
+                                actualizacionSilenciosa = true
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w("TemperaturaRepository", "No se pudo actualizar el aviso", e)
+                }
             }
 
-            // Room emite los cambios a historiales y resúmenes; no se registra una lectura nueva.
-            existente.copy(temperatura = temperaturaConfirmada).toModelo()
+            // Room emite los cambios; no se crea otra lectura.
+            medicionActualizada
         }
     }
 

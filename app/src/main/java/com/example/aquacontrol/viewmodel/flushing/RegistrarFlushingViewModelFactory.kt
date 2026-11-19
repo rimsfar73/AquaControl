@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.aquacontrol.data.flushing.remote.PreparadorFotoFlushing
+import com.example.aquacontrol.data.remote.AquaControlApiClient
 import com.example.aquacontrol.repository.data.FlushingRemoteRepository
 
 class RegistrarFlushingViewModelFactory(
@@ -25,6 +26,15 @@ class RegistrarFlushingViewModelFactory(
                         context = appContext,
                         nombreArchivo = nombreArchivo
                     )
+                },
+                consultarUltimaTemperatura = { lineaId ->
+                    // Solo lecturas manuales confirmadas por PostgreSQL.
+                    AquaControlApiClient.service
+                        .listarTemperaturas(lineaId.toLong())
+                        .asSequence()
+                        .filter { it.lineaId == lineaId.toLong() }
+                        .maxByOrNull { it.fechaHora }
+                        ?.temperatura
                 }
             )
 

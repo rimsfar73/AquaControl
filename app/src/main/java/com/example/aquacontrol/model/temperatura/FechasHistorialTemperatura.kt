@@ -11,6 +11,9 @@ object FechasHistorialTemperatura {
     private val zonaSelector: TimeZone
         get() = TimeZone.getTimeZone("UTC")
 
+    private val zonaLocal: TimeZone
+        get() = TimeZone.getTimeZone("America/Santiago")
+
     // El selector de Material representa los días en UTC.
     // Para consultar Room usamos el inicio del día en la zona del celular.
     fun inicioLocalDesdeSelector(fechaSelector: Long): Long {
@@ -18,7 +21,7 @@ object FechasHistorialTemperatura {
             timeInMillis = fechaSelector
         }
 
-        return Calendar.getInstance().apply {
+        return Calendar.getInstance(zonaLocal).apply {
             clear()
             set(
                 seleccion.get(Calendar.YEAR),
@@ -32,7 +35,7 @@ object FechasHistorialTemperatura {
     }
 
     fun finLocalExclusivoDesdeSelector(fechaSelector: Long): Long {
-        return Calendar.getInstance().apply {
+        return Calendar.getInstance(zonaLocal).apply {
             timeInMillis = inicioLocalDesdeSelector(fechaSelector)
 
             // Avanza un día de calendario, no una cantidad fija de horas.
@@ -41,7 +44,7 @@ object FechasHistorialTemperatura {
     }
 
     fun selectorDesdeInicioLocal(inicioLocal: Long): Long {
-        val fechaLocal = Calendar.getInstance().apply {
+        val fechaLocal = Calendar.getInstance(zonaLocal).apply {
             timeInMillis = inicioLocal
         }
 
@@ -49,7 +52,7 @@ object FechasHistorialTemperatura {
     }
 
     fun selectorDesdeFinLocalExclusivo(finExclusivo: Long): Long {
-        val fechaLocal = Calendar.getInstance().apply {
+        val fechaLocal = Calendar.getInstance(zonaLocal).apply {
             timeInMillis = finExclusivo
 
             // Recupera el último día incluido en el filtro.
@@ -76,6 +79,7 @@ object FechasHistorialTemperatura {
             Locale.getDefault()
         )
 
+        formato.timeZone = zonaLocal
         return formato.format(Date(fechaHora))
     }
 

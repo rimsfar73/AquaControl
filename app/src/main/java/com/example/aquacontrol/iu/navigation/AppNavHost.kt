@@ -301,6 +301,12 @@ fun AppNavHost(
     val alertasViewModel: AlertasViewModel = viewModel(
         factory = alertasFactory
     )
+    // El ViewModel global puede nacer antes del login; refrescamos tras obtener JWT.
+    LaunchedEffect(perfil, alertasViewModel) {
+        if (perfil != null && AuthSessionManager.obtenerToken() != null) {
+            alertasViewModel.cargarAlertas()
+        }
+    }
     // Observa el ViewModel; cada cambio de estado actualiza la interfaz.
     val estadoAlertas by alertasViewModel.uiState.collectAsState()
     val alertasActuales = (estadoAlertas as? AlertasUiState.Success)
